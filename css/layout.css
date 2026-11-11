@@ -1,0 +1,23 @@
+.app {
+  display: grid;
+  grid-template-columns: var(--sidebar-width) 1fr;
+  height: 100vh;
+  transition: grid-template-columns var(--transition);
+}
+.app.is-collapsed { grid-template-columns: var(--sidebar-width-collapsed) 1fr; }
+
+.content {
+  overflow-y: auto;
+  padding: var(--space-6);
+  outline: none;
+}
+
+@media (max-width: 768px) {
+  .app { grid-template-columns: 1fr; }
+  .sidebar {
+    position: fixed; inset: 0 auto 0 0; width: var(--sidebar-width);
+    z-index: 10; transform: translateX(-100%); transition: transform var(--transition);
+  }
+  .app:not(.is-collapsed) .sidebar { transform: none; }
+  .app.is-collapsed { grid-template-columns: 1fr; }
+}

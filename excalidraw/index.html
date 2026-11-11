@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Excalidraw</title>
+    <link rel="stylesheet" href="https://esm.sh/@excalidraw/excalidraw@0.18.0/dist/dev/index.css" />
+    <style>html, body, #app { margin: 0; height: 100%; width: 100%; }</style>
+    <script>window.EXCALIDRAW_ASSET_PATH = "https://esm.sh/@excalidraw/excalidraw@0.18.0/dist/prod/";</script>
+    <script type="importmap">
+      { "imports": {
+          "react": "https://esm.sh/react@19.0.0",
+          "react/jsx-runtime": "https://esm.sh/react@19.0.0/jsx-runtime",
+          "react-dom": "https://esm.sh/react-dom@19.0.0",
+          "react-dom/client": "https://esm.sh/react-dom@19.0.0/client" } }
+    </script>
+  </head>
+  <body>
+    <div id="app"></div>
+    <!-- Script inline (não src=): módulos externos são bloqueados em file://. -->
+    <script type="module">
+      // Host do Excalidraw: a página pai envia a cena por postMessage (mesmo protocolo do aes-ai-sofware-factory).
+      import * as ExcalidrawLib from "https://esm.sh/@excalidraw/excalidraw@0.18.0/dist/dev/index.js?external=react,react-dom";
+      import React from "https://esm.sh/react@19.0.0";
+      import ReactDOM from "https://esm.sh/react-dom@19.0.0/client";
+
+      let api = null;
+      const App = () => React.createElement("div", { style: { height: "100%" } },
+        React.createElement(ExcalidrawLib.Excalidraw, {
+          excalidrawAPI: (a) => { api = a; window.parent.postMessage({ type: "excalidraw:ready" }, "*"); },
+        }));
+      ReactDOM.createRoot(document.getElementById("app")).render(React.createElement(App));
+
+      window.addEventListener("message", (event) => {
+        if (!api) return;
+        if (event.data?.type === "excalidraw:load") {
+          const scene = event.data.scene ?? {};
+          api.updateScene({ elements: scene.elements ?? [], appState: scene.appState ?? {} });
+          api.scrollToContent(undefined, { fitToContent: true });
+        }
+        if (event.data?.type === "excalidraw:save-request") {
+          const s = api.getAppState();
+          window.parent.postMessage({ type: "excalidraw:save-response", scene: {
+            type: "excalidraw", version: 2, source: "aes-init", elements: api.getSceneElements(),
+            appState: { gridSize: s.gridSize, viewBackgroundColor: s.viewBackgroundColor }, files: api.getFiles(),
+          } }, "*");
+        }
+      });
+    </script>
+  </body>
+</html>

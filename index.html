@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AI Soft Factory</title>
+    <link rel="stylesheet" href="css/tokens.css" />
+    <link rel="stylesheet" href="css/base.css" />
+    <link rel="stylesheet" href="css/layout.css" />
+    <link rel="stylesheet" href="css/sidebar.css" />
+    <link rel="stylesheet" href="css/pages.css" />
+    <link rel="stylesheet" href="css/onboarding.css" />
+    <link rel="stylesheet" href="css/cycles.css" />
+    <!-- Aplica o tema salvo antes de desenhar a página (evita piscar) -->
+    <script src="js/theme.js"></script>
+  </head>
+  <body>
+    <!-- Ícones: definidos uma vez aqui e usados com <use href="#i-nome"> -->
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+      <defs>
+        <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></symbol>
+        <symbol id="i-work" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></symbol>
+        <symbol id="i-supervisor" viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/></symbol>
+        <symbol id="i-pipeline" viewBox="0 0 24 24"><circle cx="6" cy="6" r="3"/><circle cx="18" cy="18" r="3"/><path d="M6 9v3a3 3 0 003 3h6"/></symbol>
+        <symbol id="i-activity" viewBox="0 0 24 24"><path d="M3 12h4l3-8 4 16 3-8h4"/></symbol>
+        <symbol id="i-status" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="7" rx="2"/><rect x="3" y="13" width="18" height="7" rx="2"/></symbol>
+        <symbol id="i-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/></symbol>
+        <symbol id="i-monitor" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></symbol>
+        <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5L19 19M19 5l-1.5 1.5M6.5 17.5L5 19"/></symbol>
+        <symbol id="i-moon" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z"/></symbol>
+        <symbol id="i-chevron" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></symbol>
+        <symbol id="i-updown" viewBox="0 0 24 24"><path d="M8 9l4-4 4 4"/><path d="M8 15l4 4 4-4"/></symbol>
+        <symbol id="i-panel" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></symbol>
+        <symbol id="i-project" viewBox="0 0 24 24"><rect x="3" y="4" width="14" height="12" rx="2"/><path d="M8 20h10a3 3 0 003-3v-5"/></symbol>
+        <symbol id="i-sparkles" viewBox="0 0 24 24"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M19 15l.7 2.3L22 18l-2.3.7L19 21l-.7-2.3L16 18l2.3-.7z"/></symbol>
+        <symbol id="i-branch" viewBox="0 0 24 24"><circle cx="6" cy="5" r="2.5"/><circle cx="6" cy="19" r="2.5"/><circle cx="18" cy="8" r="2.5"/><path d="M6 7.5v9M18 10.5c0 4-6 3-12 6"/></symbol>
+        <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></symbol>
+        <symbol id="i-github" viewBox="0 0 24 24"><path d="M9 19c-4 1.5-4-2-6-2.5m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6 0 00-1.3-3.2 4.2 4.2 0 00-.1-3.2s-1.1-.3-3.5 1.3a12.3 12.3 0 00-6.2 0C6.5 2.8 5.4 3.1 5.4 3.1a4.2 4.2 0 00-.1 3.2A4.6 4.6 0 004 9.5c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V21"/></symbol>
+        <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M5 16v3a1 1 0 001 1h12a1 1 0 001-1v-3"/></symbol>
+        <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 012-2h9"/></symbol>
+        <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+        <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+        <symbol id="i-terminal" viewBox="0 0 24 24"><path d="M5 8l4 4-4 4M12 17h7"/></symbol>
+      </defs>
+    </svg>
+
+    <div class="app" id="app">
+      <!-- ===== SIDEBAR ===== -->
+      <aside class="sidebar" aria-label="Navegação principal">
+        <div class="sidebar__header">
+          <div class="brand">
+            <span class="brand__logo">AES</span>
+            <span>AI Soft Factory</span>
+          </div>
+          <button class="icon-btn" id="btn-collapse" aria-label="Recolher menu">
+            <svg class="icon" width="16" height="16"><use href="#i-panel" /></svg>
+          </button>
+        </div>
+
+        <button class="project-switcher" id="project-switcher" aria-label="Selecionar pasta do projeto" title="Select project folder">
+          <span class="project-switcher__label">
+            <svg class="icon" width="16" height="16"><use href="#i-project" /></svg>
+            <span data-project-label>Select project</span>
+          </span>
+          <svg class="icon" width="14" height="14"><use href="#i-updown" /></svg>
+        </button>
+
+        <nav class="nav">
+          <ul>
+            <li>
+              <a class="nav__item" href="#/" data-link>
+                <svg class="icon" width="18" height="18"><use href="#i-home" /></svg>
+                <span>Home</span>
+              </a>
+            </li>
+            <li>
+              <a class="nav__item" href="#/pipeline" data-link>
+                <svg class="icon" width="18" height="18"><use href="#i-pipeline" /></svg>
+                <span>Pipeline</span>
+              </a>
+            </li>
+            <li>
+              <a class="nav__item" href="#/activity" data-link>
+                <svg class="icon" width="18" height="18"><use href="#i-activity" /></svg>
+                <span>Activity</span>
+              </a>
+            </li>
+          </ul>
+        </nav>
+
+        <div class="sidebar__footer">
+          <div class="user">
+            <span class="user__avatar" data-user-avatar>L</span>
+            <div>
+              <div class="user__name" data-user-name>Leonardo solar</div>
+              <div class="user__handle" data-user-handle>@leonardorsolar</div>
+            </div>
+          </div>
+          <a class="nav__item" href="#/settings" data-link>
+            <svg class="icon" width="16" height="16"><use href="#i-settings" /></svg>
+            <span>Settings</span>
+          </a>
+        </div>
+      </aside>
+
+      <!-- ===== CONTEÚDO: cada <section> é uma página; o JS só mostra a da URL ===== -->
+      <main class="content" id="view">
+        <section class="page" data-page="/" data-title="Home">
+          <h1 class="page__title">Home</h1>
+          <p class="page__subtitle">Visão geral do projeto.</p>
+          <div class="home-actions">
+            <a class="btn btn--icon" href="#/project" data-link-nav>
+              <svg class="icon" width="14" height="14"><use href="#i-file" /></svg>
+              Scan the codebase
+            </a>
+            <a class="btn btn--icon" href="#/diagram" data-link-nav>
+              <svg class="icon" width="14" height="14"><use href="#i-pipeline" /></svg>
+              Diagrama
+            </a>
+            <a class="btn btn--icon" href="#/notes" data-link-nav>
+              <svg class="icon" width="14" height="14"><use href="#i-file" /></svg>
+              Notas
+            </a>
+          </div>
+        </section>
+
+        <!-- ===== Scan the codebase ===== -->
+        <section class="page page--narrow" data-page="/project" data-title="Projeto" hidden>
+          <h1 class="page__title">Projeto</h1>
+          <p class="page__subtitle">Informações, relatório do scan e onboarding do projeto.</p>
+
+          <!-- 1. Informações do Projeto -->
+          <div class="panel">
+            <h2 class="panel__title">1. Informações do Projeto</h2>
+            <div class="setting">
+              <div>
+                <div class="setting__name" data-scan-name>Nenhum projeto selecionado</div>
+                <div class="setting__desc" data-scan-info>Selecione a pasta do projeto no menu lateral.</div>
+              </div>
+              <span class="badge" data-scan-status>Inativo</span>
+            </div>
+          </div>
+
+          <!-- Baixar skill + como usar -->
+          <div class="panel">
+            <div class="panel__head">
+              <h2 class="panel__title">Skill do scan</h2>
+              <button class="btn btn--primary" data-skills-install>Baixar skill</button>
+            </div>
+            <p class="page__subtitle" data-skills-status>Selecione um projeto para ver o status.</p>
+            <p class="gh-error" data-skills-error hidden></p>
+            <div class="scan-empty">
+              Depois de baixar, abra o projeto no <strong>Claude Code</strong> e rode:
+              <div class="cmd-list" data-skills-cmds></div>
+              O relatório abaixo é atualizado sozinho quando os arquivos aparecerem em <code>.aes/project/</code>.
+            </div>
+          </div>
+
+          <!-- 2. Relatório do Scan (simplificado) -->
+          <div class="panel">
+            <div class="panel__head">
+              <h2 class="panel__title">2. Relatório do Scan</h2>
+              <button class="btn" data-scan-refresh>Atualizar</button>
+            </div>
+            <p class="gh-error" data-scan-error hidden></p>
+            <div data-scan-report></div>
+          </div>
+
+          <!-- 3. DevMentor Professor -->
+          <div class="panel">
+            <h2 class="panel__title">3. DevMentor Professor</h2>
+            <p class="page__subtitle">Aulas práticas hands-on — cole o prompt em qualquer LLM com acesso ao projeto para começar.</p>
+            <div data-devmentor></div>
+          </div>
+        </section>
+
+        <section class="page" data-page="/diagram" data-title="Diagrama" hidden>
+          <h1 class="page__title">Diagrama</h1>
+          <p class="page__subtitle">Boards Excalidraw do projeto, salvos em <code>.aes/diagrams</code>.</p>
+          <div class="dcard">
+            <div class="dcard__head">
+              <h2 class="dcard__title">Diagramas</h2>
+              <button class="btn btn--icon" data-diagram-pick>
+                <svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+                Selecionar diagrama existente
+              </button>
+            </div>
+            <div class="dcard__body">
+              <p class="gh-error" data-diagram-error hidden></p>
+              <div class="diagram-grid" data-diagram-list></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="page" data-page="/notes" data-title="Notas" hidden>
+          <h1 class="page__title">Notas</h1>
+          <p class="page__subtitle">Notas em Markdown do projeto, salvas em <code>.aes/notes</code>.</p>
+          <p class="gh-error" data-notes-error hidden></p>
+          <div class="notes">
+            <aside class="notes__side">
+              <div class="notes__new"><button class="btn btn--primary" data-notes-new>+ Nova nota</button></div>
+              <div class="notes__list" data-notes-list></div>
+            </aside>
+            <div class="notes__editor" data-notes-editor></div>
+          </div>
+        </section>
+
+        <!-- ===== Pipeline: ciclos em colunas e cards (js/cycles.js) ===== -->
+        <section class="page page--cycles" data-page="/pipeline" data-title="Pipeline" hidden>
+          <div class="cy" data-cycles></div>
+        </section>
+
+        <section class="page page--activity" data-page="/activity" data-title="Activity" hidden>
+          <div class="activity-head">
+            <svg class="icon" width="16" height="16"><use href="#i-activity" /></svg>
+            <h1>Activity</h1>
+          </div>
+          <p class="activity-sub">Tudo que a Factory fez, do mais recente ao mais antigo.</p>
+          <div class="activity" data-activity-feed></div>
+        </section>
+
+        <section class="page page--narrow" data-page="/settings" data-title="Preferences" hidden>
+          <h1 class="page__title">Preferences</h1>
+
+          <h2 class="section-title">General <span class="badge">Personal</span></h2>
+          <p class="page__subtitle">Stored in this browser.</p>
+
+          <div class="setting">
+            <div>
+              <div class="setting__name">Theme</div>
+              <div class="setting__desc">Color scheme for the interface</div>
+            </div>
+            <div class="segmented" role="group" aria-label="Theme">
+              <button data-theme-option="system" aria-label="System" title="System">
+                <svg class="icon" width="16" height="16"><use href="#i-monitor" /></svg>
+              </button>
+              <button data-theme-option="light" aria-label="Light" title="Light">
+                <svg class="icon" width="16" height="16"><use href="#i-sun" /></svg>
+              </button>
+              <button data-theme-option="dark" aria-label="Dark" title="Dark">
+                <svg class="icon" width="16" height="16"><use href="#i-moon" /></svg>
+              </button>
+            </div>
+          </div>
+
+          <h2 class="section-title">GitHub</h2>
+          <p class="page__subtitle">Connect your GitHub account.</p>
+
+          <div class="setting setting--pill">
+            <div class="gh-user">
+              <span class="gh-avatar" data-gh-avatar>?</span>
+              <div>
+                <div class="setting__name" data-gh-name>Not connected</div>
+                <div class="setting__desc" data-gh-login>Add a personal access token to connect</div>
+              </div>
+            </div>
+            <div class="gh-actions">
+              <button class="btn" data-gh-change>Connect</button>
+              <button class="btn btn--ghost" data-gh-disconnect hidden>Disconnect</button>
+            </div>
+          </div>
+
+          <form class="gh-form" id="gh-form" hidden>
+            <label for="gh-token">Personal access token</label>
+            <input id="gh-token" type="password" autocomplete="off" spellcheck="false" placeholder="github_pat_..." />
+            <p class="gh-hint">
+              Create one at
+              <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">github.com/settings/personal-access-tokens</a>.
+              No extra permissions are needed just to read your profile. The token is stored only in this browser.
+            </p>
+            <p class="gh-error" role="alert" hidden></p>
+            <div class="gh-actions">
+              <button class="btn btn--primary" type="submit">Save</button>
+              <button class="btn" type="button" data-gh-cancel>Cancel</button>
+            </div>
+          </form>
+
+          <h2 class="section-title">Select your project</h2>
+          <p class="page__subtitle">Factory: choose the folder of the project you want to work on.</p>
+
+          <div class="setting">
+            <div>
+              <div class="setting__name" data-project-name>No folder selected</div>
+              <div class="setting__desc" data-project-info>Pick the root folder of your project</div>
+            </div>
+            <div class="gh-actions">
+              <button class="btn" data-project-select>Select project folder</button>
+              <button class="btn btn--ghost" data-project-clear hidden>Remove</button>
+            </div>
+          </div>
+          <p class="gh-error" data-project-error hidden></p>
+        </section>
+      </main>
+    </div>
+
+    <script src="js/sidebar.js"></script>
+    <script src="js/activity.js"></script>
+    <script src="js/router.js"></script>
+    <script src="js/github.js"></script>
+    <script src="js/project.js"></script>
+    <script src="js/onboarding.js"></script>
+    <script src="js/devmentor-prompts.js"></script>
+    <script src="js/skills-bundle.js"></script>
+    <script src="js/markdown.js"></script>
+    <script src="js/scan.js"></script>
+    <script src="js/diagram.js"></script>
+    <script src="js/notes.js"></script>
+    <script src="js/cycle-md.js"></script>
+    <script src="js/cycles.js"></script>
+  </body>
+</html>

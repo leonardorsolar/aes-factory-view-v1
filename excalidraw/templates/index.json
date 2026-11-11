@@ -1,0 +1,69 @@
+{
+  "diagrams": [
+    {
+      "slug": "spec-driven-development",
+      "title": "Spec-Driven Development",
+      "description": "Visão geral do fluxo SDD"
+    },
+    {
+      "slug": "rules",
+      "title": "Rules",
+      "description": "Visão geral das regras"
+    },
+    {
+      "slug": "skills",
+      "title": "Skills",
+      "description": "Visão geral da skill"
+    },
+    {
+      "slug": "harness",
+      "title": "Harness",
+      "description": "Visão geral da Harness"
+    },
+    {
+      "slug": "resumo",
+      "title": "Agent",
+      "description": "Agent = Model + Harness"
+    },
+    {
+      "slug": "prompt",
+      "title": "Prompt",
+      "description": "Visão geral do Prompt"
+    },
+    {
+      "slug": "ferramenta",
+      "title": "Ferramenta",
+      "description": "Visão geral das Ferramentas"
+    },
+    {
+      "slug": "prd",
+      "title": "PRD",
+      "description": "Visão geral do PRD"
+    },
+    {
+      "slug": "techspec",
+      "title": "TechSpec",
+      "description": "Visão geral da TechSpec"
+    },
+    {
+      "slug": "backend-estrutura-prof",
+      "title": "Estrutura do Backend",
+      "description": "Visão geral da estrutura do backend"
+    },
+    {
+      "slug": "specdrivendevelopment",
+      "title": "Spec Driven Development (detalhado)",
+      "description": "Visão geral detalhada do Spec Driven Development"
+    },
+    {
+      "slug": "autonomous-software-factory",
+      "title": "Autonomous Software Factory AI-Native",
+      "description": "Fábrica de software autônoma AI-Native (SDLC)"
+    },
+    {
+      "slug": "teste-leo",
+      "title": "Teste Leo",
+      "description": "Diagrama de teste"
+    }
+  ]
+}

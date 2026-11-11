@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "events": [
+    {
+      "id": "3a94b374-6e32-4240-b9a6-5dad260f246b",
+      "kind": "deed",
+      "action": "claude.session_started",
+      "title": "startup",
+      "actor": "Claude",
+      "timestamp": "2026-11-11T22:47:15.374Z"
+    }
+  ]
+}
