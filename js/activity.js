@@ -26,6 +26,8 @@
     "note.saved": ["i-file", "salvou a nota"],
     "note.deleted": ["i-file", "excluiu a nota"],
     "cycle.saved": ["i-pipeline", "salvou o ciclo"],
+    "cycle.exported": ["i-pipeline", "exportou o ciclo"],
+    "cycle.imported": ["i-pipeline", "importou o ciclo"],
     "agent.saved": ["i-sparkles", "salvou o agente"],
     "prompt.copied": ["i-copy", "copiou o prompt"],
     "claude.session_started": ["i-terminal", "iniciou uma sessão"],

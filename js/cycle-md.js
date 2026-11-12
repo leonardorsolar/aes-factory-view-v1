@@ -11,6 +11,7 @@
 //   - id: intake
 //   - executa: agente intake           ← agente | skill | comando | humano
 //   - no agente: doc-writer            ← (só skill) agente dentro do qual a skill roda; opcional
+//   - extra: {"model":"opus"}          ← (importado) campos do formato aes-cycle que a tela não edita; opcional
 //   - lê: issue.md, prd.md             ← o que a etapa lê (entrada)
 //   - grava: intake.md
 //   - status: READY_FOR_SPEC           ← status que a entrega libera
@@ -47,10 +48,12 @@
           const w = v.split(/\s+/), kind = KINDS[(w[0] || "").toLowerCase()];
           if (kind) { step.kind = kind; step.ref = w.slice(1).join(" "); }
         }
+        else if (k === "extra") { try { const o = JSON.parse(v); if (o && typeof o === "object") step.x = o; } catch (e) {} }
         else if (k === "no agente") step.agent = slug(v);
         else if (k === "lê" || k === "le") step.reads = v.split(",").map((x) => x.trim()).filter(Boolean);
         else if (k === "grava") step.writes = v;
         else if (k === "status") step.status = v;
+        else if (k === "comandos") step.commands = v.replace(/\\n/g, "\n");
         else if (k === "aprovação" || k === "aprovacao") step.approve = /^(sim|true|s)$/i.test(v);
         else if (k === "vereditos") v.split(";").forEach((p) => {
           const r = /^\s*([A-Za-z0-9_-]+)\s*(?:→|->)\s*(\S+)\s*$/.exec(p);
@@ -86,9 +89,11 @@
         out.push("", "### " + (s.label || s.id), "- id: " + s.id);
         if (s.kind) out.push("- executa: " + KIND_LABEL[s.kind] + (s.ref ? " " + s.ref : ""));
         if (s.kind === "skill" && s.agent) out.push("- no agente: " + s.agent);
+        if (s.x && Object.keys(s.x).length) out.push("- extra: " + JSON.stringify(s.x));
         if (s.reads && s.reads.length) out.push("- lê: " + s.reads.join(", "));
         if (s.writes) out.push("- grava: " + s.writes);
         if (s.status) out.push("- status: " + s.status);
+        if (s.commands) out.push("- comandos: " + s.commands.replace(/\r?\n/g, "\\n"));
         out.push("- aprovação: " + (s.approve ? "sim" : "não"));
         const nx = Object.entries(s.next || {});
         if (nx.length) out.push("- vereditos: " + nx.map(([v, d]) => v + " → " + d).join("; "));

@@ -137,7 +137,7 @@
   async function save() {
     try {
       if (!(await canWrite())) { msg = "Permissão de escrita negada."; bad = true; return renderBar(); }
-      if (!saved) cur.id = M.slug(cur.label) || cur.id || "ciclo";
+      if (!saved) { cur.id = M.slug(cur.label) || cur.id || "ciclo"; if (files.includes(cur.id) && !confirm("Já existe .claude/cycles/" + cur.id + ".md. Substituir?")) return; }
       await writeFile(".claude/cycles/" + cur.id + ".md", M.serialize(cur));
       saved = true; dirty = false; msg = "Salvo em .claude/cycles/" + cur.id + ".md"; bad = false;
       if (window.Activity) Activity.log("cycle.saved", { title: cur.label || cur.id });
@@ -152,6 +152,7 @@
     const ids = files.slice(); if (!saved && !ids.includes(cur.id)) ids.unshift(cur.id);
     bar.innerHTML = `<label class="cy__f"><span class="cy__l">Ciclo</span><select class="fs-in" data-sel>${ids.map((i) => `<option value="${esc(i)}"${i === cur.id ? " selected" : ""}>${esc(i)}</option>`).join("")}</select></label>`
       + `<button class="btn" data-new>＋ Novo</button><button class="btn" data-dup>Duplicar</button>`
+      + `<button class="btn" data-json-import title="Criar um ciclo a partir de um arquivo .json (formato aes-cycle)">Importar JSON</button><button class="btn" data-json-export title="Baixar este ciclo como .json (formato aes-cycle)">Exportar JSON</button>`
       + `<label class="cy__f cy__f--name"><span class="cy__l">Nome</span><input class="fs-in" data-f="label" value="${esc(cur.label)}" placeholder="Nome do ciclo"></label>`
       + `<label class="cy__f cy__f--desc"><span class="cy__l">Descrição</span><input class="fs-in" data-f="description" value="${esc(cur.description)}" placeholder="Para quem é e o que faz"></label>`
       + `<div class="cy__f"><span class="cy__l">Aprovação</span><div class="cy__seg">${Object.entries(M.APPROVALS).map(([k, v]) => `<button data-mode="${k}" aria-pressed="${cur.approval === k}">${v}</button>`).join("")}</div></div>`
@@ -165,7 +166,7 @@
     layout();
     host.innerHTML = `<div class="cy__bar" data-bar></div><div class="cy__stage" data-stage></div>`
       + `<div class="cy__foot">Arraste os cards entre as colunas · bolinha ● liga a outro card (veredito) · duplo clique abre o card · fundo move · Ctrl+roda dá zoom</div>`
-      + `<dialog class="cy-dlg" data-card></dialog><dialog class="cy-dlg cy-dlg--sm" data-link></dialog><dialog class="cy-dlg" data-help-dlg></dialog><dialog class="cy-dlg cy-dlg--wide" data-ed-dlg></dialog><dialog class="cy-dlg cy-dlg--wide" data-phase-dlg></dialog><dialog class="cy-dlg cy-dlg--sm" data-phmenu></dialog>`;
+      + `<dialog class="cy-dlg" data-card></dialog><dialog class="cy-dlg cy-dlg--sm" data-link></dialog><dialog class="cy-dlg" data-help-dlg></dialog><dialog class="cy-dlg cy-dlg--wide" data-ed-dlg></dialog><dialog class="cy-dlg cy-dlg--wide" data-phase-dlg></dialog><dialog class="cy-dlg cy-dlg--sm" data-phmenu></dialog><dialog class="cy-dlg cy-dlg--sm" data-imp-dlg></dialog><input type="file" accept=".json,application/json" data-json-file hidden>`;
     renderBar(); renderStage(); if (card) renderCard();
   }
   function renderStage() {
@@ -176,7 +177,7 @@
       + `<div class="cy-col cy-col--new" style="left:${ph.length * COLW + 8}px;width:${COLW - 16}px;height:${colH}px"><button data-phase-new>＋ Nova fase</button></div>`;
     const nodes = cur.steps.map((s) => {
       const P = pos[s.id], pr = problems(s);
-      return `<div class="cy-node ${pr.length ? "is-warn" : "is-ok"}${s.id === sel ? " is-sel" : ""}" data-node="${esc(s.id)}" style="left:${P.x}px;top:${P.y}px" tabindex="0" title="Clique duplo para abrir o card">`
+      return `<div class="cy-node ${pr.length ? "is-warn" : "is-ok"}${s.id === sel ? " is-sel" : ""}" data-node="${esc(s.id)}" style="left:${P.x}px;top:${P.y}px" tabindex="0" title="${esc((s.commands ? "Comandos:\n" + s.commands + "\n\n" : "") + "Clique duplo para abrir o card")}">`
         + `<span class="cy-node__ic">${s.kind ? KICON[s.kind] : "＋"}</span><div class="cy-node__t"><strong>${esc(s.label || s.id)}</strong><small>${esc(kindTxt(s))}</small><small>grava ${esc(s.writes || "?")}</small></div>`
         + `<span class="cy-node__st ${pr.length ? "is-warn" : "is-ok"}" title="${esc(pr.join("\n") || "Etapa completa")}">${pr.length ? "!" : "✓"}</span>`
         + (s.approve ? `<span class="cy-node__lock" title="espera sua aprovação">✋</span>` : "")
@@ -261,9 +262,11 @@
       return `<li class="${cls}"><span>${early ? "✓" : late ? "!" : "•"}</span><code>${esc(f)}</code><small>${esc(tx)}</small><button class="fs-x" data-read-del="${k}" aria-label="Remover">✕</button></li>`;
     }).join("");
     const avail = [...new Set(cur.steps.slice(0, idx).map((x) => x.writes).filter((f) => f && !(s.reads || []).includes(f)))];
+    const cmds = `<div class="cy-nd__sub fs-field__name">Comandos de uso</div><p class="fs-muted">Como chamar esta etapa, ex.: <code>@intake &lt;owner&gt;/&lt;repo&gt;#N</code>. Aparece ao passar o mouse no card.</p><textarea class="fs-in" rows="3" data-s="commands" placeholder="@intake &lt;owner&gt;/&lt;issue#N&gt;">${esc(s.commands || "")}</textarea>`;
     return `<p class="fs-muted cy-nd__p">O agente <strong>só enxerga o que você listar aqui</strong>. A 1ª etapa costuma ler a demanda; as outras leem a entrega da etapa anterior.${helpBtn("reads")}</p>`
       + (rows ? `<ul class="cy-io">${rows}</ul>` : `<p class="fs-muted">Esta etapa ainda não lê nenhum arquivo.</p>`)
       + `<div class="cy-vrow"><input class="fs-in" data-read-new placeholder="arquivo.md"><button class="btn" data-read-add>Adicionar</button></div>`
+      + cmds
       + (avail.length ? `<div class="fs-muted cy-nd__sub">Disponíveis antes desta etapa:</div><div class="cy-chips">${avail.map((f) => `<button class="btn" data-read-chip="${esc(f)}">＋ ${esc(f)}</button>`).join("")}</div>` : "");
   }
   // PARÂMETROS: nome, fase, quem executa (agente/skill/comando/humano), vereditos, aprovação
@@ -342,6 +345,10 @@
     if ("new" in d) { blankCycle(); msg = ""; render(); requestAnimationFrame(fit); return; }
     if ("dup" in d) { duplicate(); render(); requestAnimationFrame(fit); return; }
     if ("save" in d) { await save(); return; }
+    if ("jsonExport" in d) { exportJson(); return; }
+    if ("jsonImport" in d) { $("[data-json-file]").click(); return; }
+    if ("impGo" in d && imp) { doImport(); return; }
+    if ("impCancel" in d) { $("[data-imp-dlg]").close(); imp = null; return; }
     if (d.mode) { cur.approval = d.mode; touch(); renderBar(); return; }
     if (d.zoom) { const r = $("[data-stage]").getBoundingClientRect(); zoomAt(view.k * (d.zoom === "1" ? 1.2 : 1 / 1.2), r.width / 2, r.height / 2); return; }
     if ("fit" in d) { fit(); return; }
@@ -683,6 +690,52 @@ QA           → status: DONE</pre>
     cur.phases.splice(i, 1); $("[data-phmenu]").close(); reflow();
   }
 
+  // ---------- importar / exportar .json (formato aes-cycle) ----------
+  let imp = null; // { pack, name }
+  async function exportJson() {
+    const J = window.CycleJson; if (!J || !cur) return;
+    const { pack, warnings } = J.toPack(cur), text = JSON.stringify(pack, null, 2) + "\n", name = pack.cycle.id + ".json";
+    let where = name;
+    try {
+      if (window.showSaveFilePicker) {
+        const h = await window.showSaveFilePicker({ suggestedName: name, id: "aes-cycles", types: [{ description: "Ciclo aes-cycle", accept: { "application/json": [".json"] } }] });
+        const w = await h.createWritable(); await w.write(text); await w.close(); where = h.name;
+      } else {
+        const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type: "application/json" })); a.download = name; document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+      }
+      msg = "Exportado: " + where + (warnings.length ? " · avisos: " + warnings.slice(0, 2).join("; ") + (warnings.length > 2 ? " (+" + (warnings.length - 2) + ")" : "") : ""); bad = false;
+      if (window.Activity) Activity.log("cycle.exported", { title: cur.label || cur.id });
+    } catch (e) { if (e && e.name === "AbortError") return; msg = "Não exportei: " + e.message; bad = true; }
+    updateStatus();
+  }
+  async function pickJson(file) {
+    const J = window.CycleJson; if (!file) return;
+    try {
+      const pack = JSON.parse(await file.text()), errs = J.validate(pack);
+      if (errs.length) throw new Error(errs.join("; "));
+      imp = { pack, name: file.name }; renderImport();
+    } catch (e) { msg = "JSON inválido: " + e.message; bad = true; updateStatus(); }
+  }
+  function renderImport() {
+    const J = window.CycleJson, d = $("[data-imp-dlg]"), pr = J.profiles(imp.pack), def = imp.pack.cycle.default_profile || "";
+    const first = pr.find((p) => p.id === def) ? def : pr[0].id;
+    d.innerHTML = `<div class="fs cy-card"><h3 class="fs-h3">Importar ciclo</h3><p class="fs-muted"><code>${esc(imp.name)}</code> · <strong>${esc(imp.pack.cycle.label || imp.pack.cycle.id)}</strong></p>`
+      + (imp.pack.cycle.description ? `<p class="fs-muted">${esc(imp.pack.cycle.description)}</p>` : "")
+      + `<label class="cy__f"><span class="cy__l">Perfil (quais etapas entram)</span><select class="fs-in" data-imp-prof>${pr.map((p) => `<option value="${esc(p.id)}"${p.id === first ? " selected" : ""}>${esc(p.label)} · ${p.count} etapa(s)</option>`).join("")}</select></label>`
+      + `<p class="fs-muted">Entra como um ciclo novo, ainda não salvo. Destinos como <code>@wait-author</code> e <code>@rejected</code> viram <code>@humano</code> e <code>@fim</code>.</p>`
+      + `<div class="cy-vrow"><button class="btn btn--primary" data-imp-go>Importar</button><button class="btn" data-imp-cancel>Cancelar</button></div></div>`;
+    if (!d.open) d.showModal();
+  }
+  function doImport() {
+    const J = window.CycleJson, prof = $("[data-imp-prof]").value;
+    if (dirty && !confirm("Há alterações não salvas no ciclo atual. Substituir mesmo assim?")) return;
+    cur = J.fromPack(imp.pack, prof); saved = false; dirty = true;
+    afterLoad(); syncOrder(); $("[data-imp-dlg]").close();
+    msg = "Importado: " + (cur.label || cur.id) + " (" + cur.steps.length + " etapas). Revise e clique em Salvar."; bad = false;
+    if (window.Activity) Activity.log("cycle.imported", { title: cur.label || cur.id });
+    imp = null; render(); requestAnimationFrame(fit);
+  }
+
   function commitLink(v) {
     if (!v || !linkTo) return;
     step(linkTo.from).next[v] = linkTo.to; $("[data-link]").close(); linkTo = null; touch(); renderStage();
@@ -697,10 +750,11 @@ QA           → status: DONE</pre>
     }
     if (d.f) { cur[d.f] = t.value; touch(); return; }
     if (card && d.a && card.agent) { card.agent[d.a] = t.value; return; }
-    if (card && d.s && t.matches("input.fs-in")) { const s = step(card.id); if (!s) return; if (d.s === "id") return; s[d.s] = t.value; touch(); syncStep(s); }
+    if (card && d.s && t.matches("input.fs-in, textarea.fs-in")) { const s = step(card.id); if (!s) return; if (d.s === "id") return; s[d.s] = t.value; touch(); syncStep(s); }
   });
   host.addEventListener("change", async (e) => {
     const t = e.target, d = t.dataset;
+    if ("jsonFile" in d) { const f = t.files && t.files[0]; t.value = ""; pickJson(f); return; }
     if ("sel" in d) { if (dirty && !confirm("Há alterações não salvas. Trocar de ciclo mesmo assim?")) { renderBar(); return; } await openCycle(t.value); msg = ""; render(); requestAnimationFrame(fit); return; }
     if (!card) return; const s = step(card.id); if (!s) return;
     if (d.tool && card.agent) { const a = card.agent; a.tools = t.checked ? a.tools.concat(d.tool) : a.tools.filter((x) => x !== d.tool); return; }

@@ -53,3 +53,14 @@ Aprovação: stop_at_pr
 ```
 
 Teste do formato: `node scripts/test-cycle-md.mjs`.
+
+## Importar e exportar ciclos (.json)
+
+Os botões **Importar JSON** e **Exportar JSON** da página Pipeline trocam ciclos no formato `aes-cycle` (v1), o mesmo de `aes-simple-ai-software-factory/docs/templates/cycles`.
+
+- **Importar:** escolha o arquivo e o **perfil** (quais etapas entram). Vira um ciclo novo, ainda não salvo.
+- **Exportar:** abre "Salvar como"; navegue até a pasta de destino (o navegador lembra a última). Sem esse recurso, baixa o arquivo.
+- O que a tela não edita (prompt, after, group, needs, required, port, model…) é guardado e devolvido na exportação, então o ciclo volta igual.
+- Não existe no formato: o **status** da entrega (se perde) e perfis/roteamento extras (só um perfil é exportado).
+
+Testes: `node scripts/test-cycle-md.mjs` e `node scripts/test-cycle-json.mjs` (este lê os JSON reais da pasta de exemplos).

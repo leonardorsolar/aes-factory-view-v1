@@ -1,0 +1,469 @@
+{
+  "format": "aes-cycle",
+  "version": 1,
+  "cycle": {
+    "id": "v2",
+    "label": "Fábrica v2",
+    "description": "Intake decide se vale construir → spec → build → gate → revisores roteados pelo risco → PR → approver → merge. Quatro perfis: Completo, Rápido, Bug simples e Documentação.",
+    "approval": "auto",
+    "default_profile": "rapido"
+  },
+  "phases": [
+    {
+      "id": "discover",
+      "label": "Discover",
+      "column": "To Do"
+    },
+    {
+      "id": "design",
+      "label": "Design",
+      "column": "In Progress"
+    },
+    {
+      "id": "build",
+      "label": "Build",
+      "column": "In Progress"
+    },
+    {
+      "id": "verify",
+      "label": "Verify",
+      "column": "In Review"
+    },
+    {
+      "id": "deliver",
+      "label": "Deliver",
+      "column": "In Review"
+    }
+  ],
+  "approval_modes": {
+    "auto": {
+      "label": "Automático: o approver faz o merge",
+      "pause_after": []
+    }
+  },
+  "steps": {
+    "intake": {
+      "phase": "discover",
+      "label": "Intake",
+      "run": {
+        "agent": "intake"
+      },
+      "reads": [
+        "issue.md"
+      ],
+      "writes": "intake.md",
+      "next": {
+        "ACCEPT": "@next",
+        "NEEDS-INFO": "@wait-author",
+        "REJECT": "@rejected"
+      },
+      "after": [
+        "route",
+        "comment-issue",
+        "worktree"
+      ],
+      "required": true
+    },
+    "intent": {
+      "phase": "discover",
+      "label": "Intent",
+      "run": {
+        "skill": "sdlc-intent",
+        "model": "opus"
+      },
+      "reads": [
+        "issue.md",
+        "intake.md"
+      ],
+      "writes": "intent.md",
+      "next": {
+        "DONE": "@next",
+        "BLOCKED": "@human"
+      },
+      "needs": [
+        "intake"
+      ]
+    },
+    "prd": {
+      "phase": "discover",
+      "label": "PRD",
+      "run": {
+        "agent": "doc-writer",
+        "model": "opus"
+      },
+      "prompt": "factory/prompts/prd.md",
+      "reads": [
+        "issue.md",
+        "intake.md",
+        "intent.md"
+      ],
+      "writes": "prd.md",
+      "next": {
+        "DONE": "@next",
+        "BLOCKED": "@human"
+      },
+      "needs": [
+        "intent"
+      ]
+    },
+    "prototype": {
+      "phase": "design",
+      "label": "Prototype",
+      "run": {
+        "agent": "doc-writer",
+        "model": "sonnet"
+      },
+      "prompt": "factory/prompts/prototype.md",
+      "reads": [
+        "intake.md",
+        "intent.md"
+      ],
+      "writes": "prototype.md",
+      "next": {
+        "DONE": "@next",
+        "BLOCKED": "@human"
+      },
+      "needs": [
+        "intent"
+      ]
+    },
+    "spec": {
+      "phase": "design",
+      "label": "Spec",
+      "run": {
+        "agent": "spec-writer"
+      },
+      "reads": [
+        "issue.md",
+        "intake.md",
+        "intent.md",
+        "prd.md"
+      ],
+      "writes": "spec.md",
+      "next": {
+        "DONE": "@next",
+        "BLOCKED": "@human"
+      },
+      "needs": [
+        "intent",
+        "prd"
+      ]
+    },
+    "techspec": {
+      "phase": "design",
+      "label": "TechSpec",
+      "run": {
+        "agent": "doc-writer",
+        "model": "opus"
+      },
+      "prompt": "factory/prompts/techspec.md",
+      "reads": [
+        "spec.md"
+      ],
+      "writes": "techspec.md",
+      "next": {
+        "DONE": "@next",
+        "BLOCKED": "@human"
+      },
+      "needs": [
+        "spec"
+      ]
+    },
+    "plan": {
+      "phase": "design",
+      "label": "Plan",
+      "run": {
+        "skill": "sdlc-plan",
+        "model": "opus"
+      },
+      "reads": [
+        "intent.md",
+        "spec.md",
+        "techspec.md",
+        "prototype.md"
+      ],
+      "writes": "plan.md",
+      "next": {
+        "DONE": "@next",
+        "BLOCKED": "@human"
+      },
+      "needs": [
+        "techspec",
+        "prototype"
+      ]
+    },
+    "tasks": {
+      "phase": "design",
+      "label": "Tasks",
+      "run": {
+        "agent": "doc-writer",
+        "model": "sonnet"
+      },
+      "prompt": "factory/prompts/tasks.md",
+      "reads": [
+        "spec.md",
+        "plan.md"
+      ],
+      "writes": "tasks.md",
+      "next": {
+        "DONE": "@next",
+        "BLOCKED": "@human"
+      },
+      "needs": [
+        "plan"
+      ]
+    },
+    "build": {
+      "phase": "build",
+      "label": "Build",
+      "run": {
+        "agent": "builder",
+        "resume": true
+      },
+      "reads": [
+        "spec.md",
+        "plan.md",
+        "tasks.md"
+      ],
+      "writes": "build.md",
+      "next": {
+        "READY": "@next",
+        "BLOCKED": "@human"
+      },
+      "after": [
+        "pushed"
+      ],
+      "starts_round": true,
+      "required": true,
+      "port": 0,
+      "needs": [
+        "tasks"
+      ]
+    },
+    "gate": {
+      "phase": "verify",
+      "label": "Gate",
+      "run": {
+        "script": "factory/bin/gate"
+      },
+      "writes": "round-{n}/checks.md",
+      "next": {
+        "PASS": "@next",
+        "FAIL": "build"
+      },
+      "needs": [
+        "build"
+      ]
+    },
+    "review_code": {
+      "phase": "verify",
+      "label": "Code review",
+      "group": "review",
+      "run": {
+        "agent": "reviewer-code",
+        "model": "haiku"
+      },
+      "writes": "round-{n}/review-code.md",
+      "next": {
+        "PASS": "@next",
+        "CHANGES": "build"
+      },
+      "needs": [
+        "gate"
+      ]
+    },
+    "review_ux": {
+      "phase": "verify",
+      "label": "UX review",
+      "group": "review",
+      "run": {
+        "agent": "reviewer-ux",
+        "model": "sonnet"
+      },
+      "writes": "round-{n}/review-ux.md",
+      "next": {
+        "PASS": "@next",
+        "CHANGES": "build"
+      },
+      "port": 1,
+      "needs": [
+        "gate"
+      ]
+    },
+    "review_ui": {
+      "phase": "verify",
+      "label": "UI review",
+      "group": "review",
+      "run": {
+        "agent": "reviewer-ui",
+        "model": "haiku"
+      },
+      "writes": "round-{n}/review-ui.md",
+      "next": {
+        "PASS": "@next",
+        "CHANGES": "build"
+      },
+      "port": 2,
+      "needs": [
+        "gate"
+      ]
+    },
+    "review_security": {
+      "phase": "verify",
+      "label": "Security review",
+      "group": "review",
+      "run": {
+        "agent": "reviewer-security",
+        "model": "opus"
+      },
+      "writes": "round-{n}/review-security.md",
+      "next": {
+        "PASS": "@next",
+        "CHANGES": "build"
+      },
+      "needs": [
+        "gate"
+      ]
+    },
+    "pr": {
+      "phase": "deliver",
+      "label": "PR",
+      "run": {
+        "script": "factory/scripts/pr.sh"
+      },
+      "writes": "pr.md",
+      "next": {
+        "PASS": "@next",
+        "FAIL": "@human"
+      },
+      "required": true,
+      "needs": [
+        "review_code",
+        "review_ux",
+        "review_ui",
+        "review_security"
+      ]
+    },
+    "approve": {
+      "phase": "deliver",
+      "label": "Approve",
+      "run": {
+        "agent": "approver"
+      },
+      "writes": "decision.md",
+      "next": {
+        "APPROVE": "@next",
+        "ESCALATE": "@human"
+      },
+      "needs": [
+        "pr"
+      ]
+    },
+    "merge": {
+      "phase": "deliver",
+      "label": "Merge",
+      "run": {
+        "script": "factory/scripts/merge.sh"
+      },
+      "writes": "merge.md",
+      "next": {
+        "MERGED": "@done",
+        "FAIL": "@human"
+      },
+      "confirm": true,
+      "required": true,
+      "needs": [
+        "approve"
+      ]
+    }
+  },
+  "profiles": {
+    "completo": {
+      "label": "Completo",
+      "steps": [
+        "intake",
+        "intent",
+        "prd",
+        "prototype",
+        "spec",
+        "techspec",
+        "plan",
+        "tasks",
+        "build",
+        "gate",
+        "review_code",
+        "review_ux",
+        "review_ui",
+        "review_security",
+        "pr",
+        "approve",
+        "merge"
+      ]
+    },
+    "rapido": {
+      "label": "Rápido",
+      "steps": [
+        "intake",
+        "spec",
+        "build",
+        "gate",
+        "review_code",
+        "pr",
+        "approve",
+        "merge"
+      ]
+    },
+    "bug": {
+      "label": "Bug simples",
+      "steps": [
+        "intake",
+        "build",
+        "gate",
+        "review_code",
+        "pr",
+        "approve",
+        "merge"
+      ]
+    },
+    "docs": {
+      "label": "Documentação",
+      "steps": [
+        "intake",
+        "build",
+        "review_code",
+        "pr",
+        "approve",
+        "merge"
+      ]
+    }
+  },
+  "routing": {
+    "risk": {
+      "low": {
+        "review_code": "haiku"
+      },
+      "medium": {
+        "review_code": "sonnet"
+      },
+      "high": {
+        "review_code": "sonnet"
+      }
+    },
+    "surfaces": {
+      "ui": {
+        "review_ux": "sonnet",
+        "review_ui": "haiku"
+      },
+      "security": {
+        "review_security": "opus"
+      }
+    },
+    "route_to_profile": {
+      "bug": "bug",
+      "feature": "rapido",
+      "feature_large": "completo",
+      "docs": "docs"
+    },
+    "default_profile": "rapido"
+  }
+}

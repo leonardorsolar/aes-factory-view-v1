@@ -1,0 +1,500 @@
+{
+  "format": "aes-cycle",
+  "version": 1,
+  "cycle": {
+    "id": "v3",
+    "label": "Fábrica v3",
+    "description": "Issues com a label factory entram pelo Intake (vale construir? escopo? risco?) → Spec writer → Builder → Gate (checks.sh) → revisores roteados pelo risco (código, UX, UI design, segurança) → Approver → merge do PR, ou 'precisa de humano'. FAIL devolve o log ao builder; CHANGES volta para o mesmo builder. Um orquestrador roda até 3 jobs ao mesmo tempo, cada um com worktree e branch próprios e um PR que fecha a issue. Perfis: Fábrica (todos os revisores), Completo, Rápido, Bug simples e Documentação.",
+    "approval": "auto",
+    "default_profile": "fabrica"
+  },
+  "phases": [
+    {
+      "id": "discover",
+      "label": "Discover",
+      "column": "To Do"
+    },
+    {
+      "id": "design",
+      "label": "Design",
+      "column": "In Progress"
+    },
+    {
+      "id": "build",
+      "label": "Build",
+      "column": "In Progress"
+    },
+    {
+      "id": "verify",
+      "label": "Verify",
+      "column": "In Review"
+    },
+    {
+      "id": "deliver",
+      "label": "Deliver",
+      "column": "In Review"
+    }
+  ],
+  "approval_modes": {
+    "auto": {
+      "label": "Automático: o approver faz o merge",
+      "pause_after": []
+    }
+  },
+  "steps": {
+    "intake": {
+      "phase": "discover",
+      "label": "Intake",
+      "description": "Vale construir? Qual o escopo? Qual o risco? ACCEPT segue; NEEDS-INFO pergunta ao autor; REJECT explica o porquê.",
+      "run": {
+        "agent": "intake",
+        "model": "fable"
+      },
+      "reads": [
+        "issue.md"
+      ],
+      "writes": "intake.md",
+      "next": {
+        "ACCEPT": "@next",
+        "NEEDS-INFO": "@wait-author",
+        "REJECT": "@rejected"
+      },
+      "after": [
+        "route",
+        "comment-issue",
+        "worktree"
+      ],
+      "required": true
+    },
+    "intent": {
+      "phase": "discover",
+      "label": "Intent",
+      "run": {
+        "skill": "sdlc-intent",
+        "model": "opus"
+      },
+      "reads": [
+        "issue.md",
+        "intake.md"
+      ],
+      "writes": "intent.md",
+      "next": {
+        "DONE": "@next",
+        "BLOCKED": "@human"
+      },
+      "needs": [
+        "intake"
+      ]
+    },
+    "prd": {
+      "phase": "discover",
+      "label": "PRD",
+      "run": {
+        "agent": "doc-writer",
+        "model": "opus"
+      },
+      "prompt": "factory/prompts/prd.md",
+      "reads": [
+        "issue.md",
+        "intake.md",
+        "intent.md"
+      ],
+      "writes": "prd.md",
+      "next": {
+        "DONE": "@next",
+        "BLOCKED": "@human"
+      },
+      "needs": [
+        "intent"
+      ]
+    },
+    "prototype": {
+      "phase": "design",
+      "label": "Prototype",
+      "run": {
+        "agent": "doc-writer",
+        "model": "sonnet"
+      },
+      "prompt": "factory/prompts/prototype.md",
+      "reads": [
+        "intake.md",
+        "intent.md"
+      ],
+      "writes": "prototype.md",
+      "next": {
+        "DONE": "@next",
+        "BLOCKED": "@human"
+      },
+      "needs": [
+        "intent"
+      ]
+    },
+    "spec": {
+      "phase": "design",
+      "label": "Spec writer",
+      "description": "Transforma a issue aceita em uma especificação objetiva do que construir.",
+      "run": {
+        "agent": "spec-writer",
+        "model": "opus"
+      },
+      "reads": [
+        "issue.md",
+        "intake.md",
+        "intent.md",
+        "prd.md"
+      ],
+      "writes": "spec.md",
+      "next": {
+        "DONE": "@next",
+        "BLOCKED": "@human"
+      },
+      "needs": [
+        "intent",
+        "prd"
+      ]
+    },
+    "techspec": {
+      "phase": "design",
+      "label": "TechSpec",
+      "run": {
+        "agent": "doc-writer",
+        "model": "opus"
+      },
+      "prompt": "factory/prompts/techspec.md",
+      "reads": [
+        "spec.md"
+      ],
+      "writes": "techspec.md",
+      "next": {
+        "DONE": "@next",
+        "BLOCKED": "@human"
+      },
+      "needs": [
+        "spec"
+      ]
+    },
+    "plan": {
+      "phase": "design",
+      "label": "Plan",
+      "run": {
+        "skill": "sdlc-plan",
+        "model": "opus"
+      },
+      "reads": [
+        "intent.md",
+        "spec.md",
+        "techspec.md",
+        "prototype.md"
+      ],
+      "writes": "plan.md",
+      "next": {
+        "DONE": "@next",
+        "BLOCKED": "@human"
+      },
+      "needs": [
+        "techspec",
+        "prototype"
+      ]
+    },
+    "tasks": {
+      "phase": "design",
+      "label": "Tasks",
+      "run": {
+        "agent": "doc-writer",
+        "model": "sonnet"
+      },
+      "prompt": "factory/prompts/tasks.md",
+      "reads": [
+        "spec.md",
+        "plan.md"
+      ],
+      "writes": "tasks.md",
+      "next": {
+        "DONE": "@next",
+        "BLOCKED": "@human"
+      },
+      "needs": [
+        "plan"
+      ]
+    },
+    "build": {
+      "phase": "build",
+      "label": "Builder",
+      "description": "Implementa na worktree do job. Se o gate falhar (FAIL), recebe o log; se um revisor pedir mudanças (CHANGES), o mesmo builder corrige.",
+      "run": {
+        "agent": "builder",
+        "model": "opus",
+        "resume": true
+      },
+      "reads": [
+        "spec.md",
+        "plan.md",
+        "tasks.md"
+      ],
+      "writes": "build.md",
+      "next": {
+        "READY": "@next",
+        "BLOCKED": "@human"
+      },
+      "after": [
+        "pushed"
+      ],
+      "needs": [
+        "tasks"
+      ],
+      "starts_round": true,
+      "required": true,
+      "port": 0
+    },
+    "gate": {
+      "phase": "verify",
+      "label": "Gate",
+      "description": "Roda os checks do projeto (checks.sh): lint, tipos, testes e build. FAIL devolve o log ao builder.",
+      "run": {
+        "script": "factory/bin/gate"
+      },
+      "writes": "round-{n}/checks.md",
+      "next": {
+        "PASS": "@next",
+        "FAIL": "build"
+      },
+      "needs": [
+        "build"
+      ]
+    },
+    "review_code": {
+      "phase": "verify",
+      "label": "Code review",
+      "description": "Roteado pelo risco: Haiku, e Sonnet quando o risco é médio ou alto.",
+      "run": {
+        "agent": "reviewer-code",
+        "model": "haiku"
+      },
+      "writes": "round-{n}/review-code.md",
+      "next": {
+        "PASS": "@next",
+        "CHANGES": "build"
+      },
+      "group": "review",
+      "needs": [
+        "gate"
+      ]
+    },
+    "review_ux": {
+      "phase": "verify",
+      "label": "UX review",
+      "description": "Só quando a mudança toca a interface (surface ui).",
+      "run": {
+        "agent": "reviewer-ux",
+        "model": "sonnet"
+      },
+      "writes": "round-{n}/review-ux.md",
+      "next": {
+        "PASS": "@next",
+        "CHANGES": "build"
+      },
+      "group": "review",
+      "needs": [
+        "gate"
+      ],
+      "port": 1
+    },
+    "review_ui": {
+      "phase": "verify",
+      "label": "UI design review",
+      "description": "Só quando a mudança toca a interface (surface ui).",
+      "run": {
+        "agent": "reviewer-ui",
+        "model": "haiku"
+      },
+      "writes": "round-{n}/review-ui.md",
+      "next": {
+        "PASS": "@next",
+        "CHANGES": "build"
+      },
+      "group": "review",
+      "needs": [
+        "gate"
+      ],
+      "port": 2
+    },
+    "review_security": {
+      "phase": "verify",
+      "label": "Security review",
+      "description": "Só quando a mudança toca segurança (surface security).",
+      "run": {
+        "agent": "reviewer-security",
+        "model": "opus"
+      },
+      "writes": "round-{n}/review-security.md",
+      "next": {
+        "PASS": "@next",
+        "CHANGES": "build"
+      },
+      "group": "review",
+      "needs": [
+        "gate"
+      ]
+    },
+    "pr": {
+      "phase": "deliver",
+      "label": "PR",
+      "description": "Abre o PR em rascunho, com Closes #n, para fechar a issue ao integrar.",
+      "run": {
+        "script": "factory/scripts/pr.sh"
+      },
+      "writes": "pr.md",
+      "next": {
+        "PASS": "@next",
+        "FAIL": "@human"
+      },
+      "needs": [
+        "review_code",
+        "review_ux",
+        "review_ui",
+        "review_security"
+      ],
+      "required": true
+    },
+    "approve": {
+      "phase": "deliver",
+      "label": "Approver",
+      "description": "Lê os pareceres e decide: APPROVE segue para o merge; ESCALATE chama um humano (você decide).",
+      "run": {
+        "agent": "approver",
+        "model": "opus"
+      },
+      "writes": "decision.md",
+      "next": {
+        "APPROVE": "@next",
+        "ESCALATE": "@human"
+      },
+      "needs": [
+        "pr"
+      ]
+    },
+    "merge": {
+      "phase": "deliver",
+      "label": "Merge the PR",
+      "description": "Sincroniza com a base, roda o gate de novo e faz gh pr merge.",
+      "run": {
+        "script": "factory/scripts/merge.sh"
+      },
+      "writes": "merge.md",
+      "next": {
+        "MERGED": "@done",
+        "FAIL": "@human"
+      },
+      "needs": [
+        "approve"
+      ],
+      "required": true,
+      "confirm": true
+    }
+  },
+  "profiles": {
+    "fabrica": {
+      "label": "Fábrica (todos os revisores)",
+      "steps": [
+        "intake",
+        "spec",
+        "build",
+        "gate",
+        "review_code",
+        "review_ux",
+        "review_ui",
+        "review_security",
+        "pr",
+        "approve",
+        "merge"
+      ]
+    },
+    "completo": {
+      "label": "Completo",
+      "steps": [
+        "intake",
+        "intent",
+        "prd",
+        "prototype",
+        "spec",
+        "techspec",
+        "plan",
+        "tasks",
+        "build",
+        "gate",
+        "review_code",
+        "review_ux",
+        "review_ui",
+        "review_security",
+        "pr",
+        "approve",
+        "merge"
+      ]
+    },
+    "rapido": {
+      "label": "Rápido",
+      "steps": [
+        "intake",
+        "spec",
+        "build",
+        "gate",
+        "review_code",
+        "pr",
+        "approve",
+        "merge"
+      ]
+    },
+    "bug": {
+      "label": "Bug simples",
+      "steps": [
+        "intake",
+        "build",
+        "gate",
+        "review_code",
+        "pr",
+        "approve",
+        "merge"
+      ]
+    },
+    "docs": {
+      "label": "Documentação",
+      "steps": [
+        "intake",
+        "build",
+        "review_code",
+        "pr",
+        "approve",
+        "merge"
+      ]
+    }
+  },
+  "routing": {
+    "risk": {
+      "low": {
+        "review_code": "haiku"
+      },
+      "medium": {
+        "review_code": "sonnet"
+      },
+      "high": {
+        "review_code": "sonnet"
+      }
+    },
+    "surfaces": {
+      "ui": {
+        "review_ux": "sonnet",
+        "review_ui": "haiku"
+      },
+      "security": {
+        "review_security": "opus"
+      }
+    },
+    "route_to_profile": {
+      "bug": "bug",
+      "feature": "rapido",
+      "feature_large": "completo",
+      "docs": "docs"
+    },
+    "default_profile": "rapido"
+  }
+}

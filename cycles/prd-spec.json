@@ -1,0 +1,64 @@
+{
+  "format": "aes-cycle",
+  "version": 1,
+  "cycle": {
+    "id": "prd_spec",
+    "label": "PRD-Spec",
+    "description": "Intake → PRD (aes-create-prd) → TechSpec (aes-create-techspec) → Tasks (aes-create-tasks). Cada skill pode fazer perguntas na sessão do /factory run. Gera os documentos; não implementa.",
+    "approval": "manual",
+    "default_profile": "prd_spec"
+  },
+  "phases": [
+    { "id": "discover", "label": "Discover", "column": "To Do" },
+    { "id": "design", "label": "Design", "column": "In Progress" }
+  ],
+  "approval_modes": {
+    "manual": { "label": "Manual: aprovo cada etapa", "pause_after": "all" }
+  },
+  "steps": {
+    "intake": {
+      "phase": "discover",
+      "label": "Intake",
+      "run": { "agent": "intake" },
+      "reads": ["issue.md"],
+      "writes": "intake.md",
+      "next": { "ACCEPT": "@next", "NEEDS-INFO": "@wait-author", "REJECT": "@rejected" },
+      "after": ["route", "comment-issue", "worktree"],
+      "required": true
+    },
+    "prd": {
+      "phase": "discover",
+      "label": "PRD",
+      "run": { "skill": "aes-create-prd", "agent": "general-purpose", "model": "opus" },
+      "prompt": "factory/prompts/prd.md",
+      "reads": ["issue.md", "intake.md"],
+      "writes": "prd.md",
+      "next": { "DONE": "@next", "BLOCKED": "@human" },
+      "needs": ["intake"]
+    },
+    "techspec": {
+      "phase": "design",
+      "label": "TechSpec",
+      "run": { "skill": "aes-create-techspec", "agent": "doc-writer", "model": "opus" },
+      "prompt": "factory/prompts/techspec.md",
+      "reads": ["issue.md", "intake.md", "prd.md"],
+      "writes": "techspec.md",
+      "next": { "DONE": "@next", "BLOCKED": "@human" },
+      "needs": ["prd"]
+    },
+    "tasks": {
+      "phase": "design",
+      "label": "Tasks",
+      "run": { "skill": "aes-create-tasks", "agent": "doc-writer", "model": "opus" },
+      "prompt": "factory/prompts/tasks.md",
+      "reads": ["prd.md", "techspec.md"],
+      "writes": "tasks.md",
+      "next": { "DONE": "@next", "BLOCKED": "@human" },
+      "needs": ["techspec"]
+    }
+  },
+  "profiles": {
+    "prd_spec": { "label": "PRD → Tasks", "steps": ["intake", "prd", "techspec", "tasks"] }
+  },
+  "files": true
+}
