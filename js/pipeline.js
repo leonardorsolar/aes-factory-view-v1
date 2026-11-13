@@ -15,6 +15,25 @@
     return cols;
   }
 
+  // dentro de uma fase com etapas em paralelo, a que depende de outra da mesma fase vai para uma sub-coluna à direita dela
+  // (ex.: Verify = gate | revisores em paralelo). Devolve { id: nível } e o total de níveis da fase.
+  function levels(cfg, col) {
+    const ids = new Set(col.steps.map((s) => s.id)), lv = {};
+    const of = (id, seen = new Set()) => {
+      if (id in lv) return lv[id];
+      if (seen.has(id)) return 0; seen.add(id);
+      const deps = ((cfg.steps[id] || {}).needs || []).filter((n) => ids.has(n));
+      return (lv[id] = deps.length ? 1 + Math.max(...deps.map((n) => of(n, seen))) : 0);
+    };
+    col.steps.forEach((s) => of(s.id));
+    const n = Math.max(0, ...Object.values(lv)) + 1, count = {};
+    Object.values(lv).forEach((v) => { count[v] = (count[v] || 0) + 1; });
+    // só abre sub-colunas quando alguma delas tem etapas em paralelo (gate -> revisores); cadeia simples fica empilhada
+    if (Math.max(0, ...Object.values(count)) < 2) { Object.keys(lv).forEach((k) => { lv[k] = 0; }); return { lv, n: 1 }; }
+    return { lv, n };
+  }
+  const gridCols = (ns) => ns.map((n) => `minmax(${150 * n + 64 * (n - 1)}px, ${n}fr)`).join(" ");
+
 
   const NS = "http://www.w3.org/2000/svg";
   const svgEl = (tag, attrs) => { const n = document.createElementNS(NS, tag); for (const k in attrs) n.setAttribute(k, attrs[k]); return n; };
@@ -22,7 +41,7 @@
   // etapa anterior que está no perfil (pula as que ficaram de fora)
   function parents(cfg, on, id, seen = new Set()) {
     const out = [];
-    if (!Object.values(cfg.steps).some((x) => x.needs && x.needs.length)) { // ciclo sem "needs": segue a ordem do perfil
+    if (!(cfg.steps[id].needs || []).length) { // etapa sem "needs": segue a ordem do perfil
       const order = (cfg.profiles[cfg.cycle.default_profile] || { steps: [] }).steps, i = order.indexOf(id);
       return i > 0 ? [order[i - 1]] : [];
     }
@@ -85,7 +104,7 @@
     const label = String(st.label || st.id).toLowerCase();
     const agentName = r.agent && String(r.agent).split(/[\s(]/)[0];
     const skillName = r.skill || (String(r.agent || "").match(/skill\s+([\w-]+)/) || [])[1];
-    const ask = st.id === "intake" ? "triar a <issue#N>" : "executar a etapa " + label + " da <issue#N>";
+    const ask = st.id === "intake" ? "triar a <issue#N>" : st.id === "gate" ? "rodar os testes (lint, tipos, testes, build) da <issue#N>" : "executar a etapa " + label + " da <issue#N>";
     if (agentName) out.push("@" + agentName + " " + ask);
     if (skillName) out.push("/" + skillName + " <issue#N>");
     if (r.script) out.push(r.script + " <issue#N>");
@@ -146,16 +165,21 @@
     box.append(el("h2", "pp__title", "Desenho da pipeline - " + (cfg.cycle.label || cfg.cycle.id)), src);
     box.append(el("p", "pp__hint", "Espelha o ciclo do projeto. Cada caixa é uma etapa (clique para ver o resumo); setas mostram a ordem" + (profile.label ? " do perfil “" + profile.label + "”" : "") + "; caixas apagadas ficam fora do perfil."));
     const grid = el("div", "pp__grid");
+    const widths = cols.map((c) => levels(cfg, c).n);
+    if (widths.some((n) => n > 1)) grid.style.gridTemplateColumns = gridCols(widths);
     cols.forEach((c) => {
       const col = el("div", "pp__col");
       const head = el("div", "pp__head"); head.append(el("b", null, c.label), el("span", null, "coluna " + c.column));
       const list = el("div", "pp__steps");
+      const L = levels(cfg, c);
+      if (L.n > 1) { list.classList.add("pp__steps--lv"); list.style.gridTemplateColumns = `repeat(${L.n}, minmax(0, 1fr))`; list.style.columnGap = "64px"; }
+      const subs = Array.from({ length: L.n }, () => { const d = el("div", "pp__sub"); if (L.n > 1) list.append(d); return d; });
       c.steps.forEach((s) => {
         const b = el("div", "pp__step" + (on.has(s.id) ? " is-on" : "") + (s.extra ? " is-extra" : ""));
         b.append(el("strong", null, s.label || s.id), el("small", null, s.extra ? "CI" : mark(s) + who(s) + ((s.run || {}).model ? " · " + s.run.model : "")));
         b.dataset.step = s.id;
         if (!s.extra) { b.tabIndex = 0; b.setAttribute("role", "button"); b.classList.add("is-click"); const open = () => info(cfg, s, on.has(s.id)); b.addEventListener("click", open); b.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); } }); }
-        list.append(b);
+        (L.n > 1 ? subs[L.lv[s.id]] : list).append(b);
       });
       col.append(head, list); grid.append(col);
     });
@@ -167,23 +191,155 @@
     requestAnimationFrame(redraw);
     if (window.ResizeObserver) new ResizeObserver(redraw).observe(grid);
 
-    // tarefa alinhada com as fases
+    // tarefas alinhadas com as fases: os cards vêm de trabalhos/ + eventos do hook (refreshTasks)
     const board = el("section", "pp__board");
     board.append(el("h2", "pp__title", "Tarefas"));
+    const how = el("p", "pp__hint", "");
+    how.innerHTML = "O card não guarda estado: a cada ~3 s a tela o recalcula. <strong>Por onde passou</strong> vem dos arquivos em <code>trabalhos/&lt;repo&gt;-issue-N/</code> (a 1ª linha de cada um é o veredito, ex.: <code>ACCEPT</code>). <strong>Rodando agora</strong> vem do hook (<code>.aes/activity.json</code>). <strong>Para onde vai</strong> e <strong>a coluna</strong> vêm do ciclo (veredito → próxima etapa, esperar o autor ou encerrar; campo <code>phase</code> da etapa). Se o hook atrasar, os arquivos continuam dizendo o estado correto.";
+    const note = el("p", "pp__hint", ""); board.append(how, note);
     const bgrid = el("div", "pp__grid");
-    cols.forEach((c, i) => {
+    if (widths.some((n) => n > 1)) bgrid.style.gridTemplateColumns = gridCols(widths);
+    const taskCols = new Map();
+    cols.forEach((c) => {
       const col = el("div", "pp__col");
-      const head = el("div", "pp__head"); head.append(el("b", null, c.label), el("span", null, c.steps.filter((s) => on.has(s.id)).length + " etapas"));
-      col.append(head);
-      if (i === 0) {
-        const card = el("div", "pp__card");
-        card.append(el("div", "pp__num", "#nova"), el("div", "pp__ctitle", "Nova tarefa"), el("div", "pp__meta", "etapa: " + (profile.steps[0] && cfg.steps[profile.steps[0]] ? cfg.steps[profile.steps[0]].label : "—") + " · aguardando início"));
-        col.append(card);
-      } else col.append(el("div", "pp__empty", "—"));
-      bgrid.append(col);
+      const head = el("div", "pp__head"); head.append(el("b", null, c.label), el("span", null, "coluna " + c.column));
+      const body = el("div", "pp__cards"); col.append(head, body);
+      taskCols.set(c.id, body); bgrid.append(col);
     });
     board.append(bgrid); root.append(board);
+    ctx = { cfg, on, order: profile.steps.filter((id) => cfg.steps[id]), taskCols, note, fromProject: !!(list && list.length) };
+    lastKey = ""; refreshTasks();
   }
+
+  // ---------- tarefas: arquivos em trabalhos/<repo>-issue-<N>/ + eventos do hook (.aes/activity.json) ----------
+  let ctx = null, lastKey = "";
+  const first = (t) => String(t || "").split("\n")[0].trim();
+  const verdictOf = (t) => { const m = first(t).match(/^[A-Z][A-Z _-]*:\s*([A-Z][A-Z-]*)/); return m ? m[1] : ""; };
+  async function dirAt(h, parts) { let d = h; for (const p of parts) d = await d.getDirectoryHandle(p); return d; }
+  async function readInfo(h, path) { // { text, mtime } ou null
+    const a = path.split("/");
+    try { const f = await (await (await dirAt(h, a.slice(0, -1))).getFileHandle(a[a.length - 1])).getFile(); return { text: await f.text(), mtime: f.lastModified }; }
+    catch (e) { return null; }
+  }
+  async function readableHandle() {
+    const h = await getHandle(); if (!h) return null;
+    try { if (h.queryPermission && (await h.queryPermission({ mode: "read" })) !== "granted") return null; } catch (e) { return null; }
+    return h;
+  }
+  const RUN_MAX_MS = 30 * 60 * 1000; // um "rodando" sem fim registrado vira "travado" depois disso
+  const agentOf = (st) => String((st.run || {}).agent || "").split(/[\s(]/)[0];
+
+  async function scanTasks(h) {
+    const { cfg, order } = ctx;
+    const events = (await readInfo(h, ".aes/activity.json").then((i) => { try { return JSON.parse(i.text).events || []; } catch (e) { return []; } }).catch(() => []));
+    const stepOfAgent = {}; order.forEach((id) => { const a = agentOf(cfg.steps[id]); if (a) stepOfAgent[a] = id; });
+    const tasks = new Map();
+    const get = (n) => { if (!tasks.has(n)) tasks.set(n, { issue: n, repo: "", dir: "", title: "", steps: {}, files: [] }); return tasks.get(n); };
+    try {
+      const d = await dirAt(h, ["trabalhos"]);
+      for await (const e of d.values()) {
+        const m = e.kind === "directory" && e.name.match(/^(.+)-issue-(\d+)$/); if (!m) continue;
+        const t = get(Number(m[2])); t.repo = m[1]; t.dir = "trabalhos/" + e.name;
+        for await (const f of e.values()) if (f.kind === "file" && f.name.endsWith(".md")) t.files.push(f.name);
+        t.files.sort();
+      }
+    } catch (e) { /* sem trabalhos/ ainda */ }
+    for (const ev of events) if (ev.action === "factory.step_started" && ev.issue) get(ev.issue);
+    const now = Date.now();
+    for (const t of tasks.values()) {
+      for (const id of order) {
+        const w = cfg.steps[id].writes;
+        const st = { id, state: "pending", verdict: "" };
+        if (t.dir && w && !/[{}]/.test(w)) {
+          const f = await readInfo(h, t.dir + "/" + w);
+          if (f) { st.state = "done"; st.verdict = verdictOf(f.text); if (!t.title && id === "prd") t.title = first(f.text.split("\n").find((l) => /^#\s/.test(l)) || "").replace(/^#\s*(PRD:\s*)?/, "").replace(/\s*\(issue\s*#?\d+\)\s*$/i, ""); }
+          else if (t.files.includes(w.replace(/\.md$/, "") + ".questions.md") && !t.files.includes(w.replace(/\.md$/, "") + ".answers.md")) st.state = "waiting";
+        }
+        const agent = agentOf(cfg.steps[id]);
+        const started = events.find((e) => e.action === "factory.step_started" && e.issue === t.issue && e.agent === agent);
+        if (started) {
+          const ts = Date.parse(started.timestamp);
+          const ended = events.some((e) => Date.parse(e.timestamp) > ts && ((e.action === "factory.step_finished" && e.agent === agent) || e.action === "claude.responded"));
+          if (!ended && now - ts < RUN_MAX_MS) st.state = "running";
+        }
+        t.steps[id] = st;
+      }
+      // fase do card: etapa rodando; senão a da última etapa com saída (ou a da próxima, se o veredito for @next)
+      const run = order.find((id) => t.steps[id].state === "running");
+      let idx = -1; order.forEach((id, i) => { if (t.steps[id].state !== "pending") idx = i; });
+      t.flag = "";
+      if (run) t.phase = cfg.steps[run].phase;
+      else if (idx < 0) t.phase = cfg.steps[order[0]].phase;
+      else {
+        const id = order[idx], st = t.steps[id], dest = st.state === "done" ? (cfg.steps[id].next || {})[st.verdict] : "";
+        if (st.state === "waiting") t.flag = "aguardando sua resposta";
+        else if (dest === "@wait-author") t.flag = "perguntou ao autor";
+        else if (dest === "@rejected") t.flag = "rejeitado";
+        else if (dest === "@human") t.flag = "sua decisão";
+        else if (dest === "@done") t.flag = "concluída";
+        t.phase = cfg.steps[dest === "@next" && order[idx + 1] ? order[idx + 1] : id].phase;
+      }
+      t.live = !!run;
+    }
+    return [...tasks.values()].sort((a, b) => b.issue - a.issue);
+  }
+
+  const MARK = { done: "✓", running: "◐", waiting: "⏸", pending: "○" };
+  function taskCard(t) {
+    const card = el("div", "pp__card is-click" + (t.live ? " is-live" : "") + (t.flag === "rejeitado" ? " is-off" : ""));
+    card.tabIndex = 0; card.setAttribute("role", "button");
+    const top = el("div", "pp__top"); if (t.live) top.append(el("span", "pp__pulse"));
+    top.append(el("span", "pp__num", "#" + t.issue + (t.repo ? " · " + t.repo : "")));
+    if (t.flag) top.append(el("span", "pp__flag", t.flag));
+    card.append(top, el("div", "pp__ctitle", t.title || "Issue #" + t.issue));
+    const ul = el("div", "pp__mini");
+    ctx.order.forEach((id) => {
+      const st = t.steps[id], row = el("div", "pp__mrow is-" + st.state);
+      row.append(el("i", null, MARK[st.state]), el("span", null, ctx.cfg.steps[id].label || id), el("small", null, st.state === "running" ? "rodando" : st.verdict || ""));
+      ul.append(row);
+    });
+    card.append(ul);
+    const open = () => openTask(t);
+    card.addEventListener("click", open);
+    card.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); } });
+    return card;
+  }
+
+  async function refreshTasks() {
+    if (!ctx) return;
+    const h = await readableHandle();
+    if (!h) { ctx.note.textContent = "Conecte a pasta do projeto (Preferences) para acompanhar as tarefas."; ctx.taskCols.forEach((b) => b.replaceChildren()); lastKey = ""; return; }
+    if (!ctx.fromProject) { ctx.note.textContent = ""; }
+    let tasks; try { tasks = await scanTasks(h); } catch (e) { return; }
+    const key = JSON.stringify(tasks.map((t) => [t.issue, t.phase, t.flag, t.live, t.title, t.files.length, ctx.order.map((id) => t.steps[id].state + t.steps[id].verdict)]));
+    if (key === lastKey) return; lastKey = key;
+    ctx.note.textContent = tasks.length ? "" : "Nenhuma tarefa ainda. Rode no Claude Code, por exemplo: @intake triar a issue 3";
+    ctx.taskCols.forEach((b) => b.replaceChildren());
+    tasks.forEach((t) => { const body = ctx.taskCols.get(t.phase) || [...ctx.taskCols.values()][0]; body.append(taskCard(t)); });
+  }
+
+  // gaveta com os .md da tarefa
+  async function openTask(t) {
+    const h = await readableHandle(); if (!h || !t.dir) return;
+    const dlg = el("dialog", "pp__dlg pp__dlg--wide");
+    const head = el("div", "pp__dhead"); const tt = el("div"); tt.append(el("h3", null, t.title || "Issue #" + t.issue), el("small", null, t.dir));
+    const x = el("button", "pp__close", "×"); x.type = "button"; x.setAttribute("aria-label", "Fechar"); x.addEventListener("click", () => dlg.close());
+    head.append(tt, x);
+    const body = el("div", "pp__tbody"), nav = el("nav", "pp__tfiles"), doc = el("article", "pp__tdoc"); body.append(nav, doc);
+    dlg.append(head, body); dlg.addEventListener("click", (e) => { if (e.target === dlg) dlg.close(); }); dlg.addEventListener("close", () => dlg.remove());
+    document.body.append(dlg); dlg.showModal();
+    const show = async (f, btn) => {
+      nav.querySelectorAll("button").forEach((b) => b.classList.toggle("is-on", b === btn));
+      const i = await readInfo(h, t.dir + "/" + f); const text = i ? i.text : "";
+      doc.replaceChildren(window.renderMarkdown ? window.renderMarkdown(text) : Object.assign(el("pre"), { textContent: text }));
+    };
+    t.files.forEach((f, n) => { const b = el("button", null, f); b.type = "button"; b.addEventListener("click", () => show(f, b)); nav.append(b); if (n === 0) show(f, b); });
+    if (!t.files.length) doc.textContent = "Nenhum arquivo .md ainda.";
+  }
+
+  // atualiza com a aba Pipeline aberta (como a página Activity)
+  const visible = () => ctx && !document.hidden && location.hash === "#/pipeline" && !root.closest("[hidden]");
+  setInterval(() => { if (visible()) refreshTasks(); }, 3000);
 
   // handle da pasta do projeto (guardado por js/project.js no IndexedDB)
   function getHandle() {
@@ -230,4 +386,5 @@
   }
   document.querySelector('[data-pipe-tab="pipeline"]')?.addEventListener("click", load);
   window.addEventListener("aes:project-changed", () => { if (!root.closest("[hidden]")) load(); });
+  load();
 })();

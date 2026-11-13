@@ -2,6 +2,176 @@
   "version": 1,
   "events": [
     {
+      "id": "eec37cbd-54e6-4600-8b55-da023d3e7edc",
+      "kind": "deed",
+      "action": "claude.responded",
+      "title": "",
+      "actor": "Claude",
+      "timestamp": "2026-11-13T17:09:55.917Z"
+    },
+    {
+      "id": "ac0d1d83-b79c-4b40-af72-ebe43a46cdf2",
+      "kind": "deed",
+      "action": "claude.file_edited",
+      "title": "template/skills/criar-agente-skill-memory/SKILL.md",
+      "actor": "Claude",
+      "timestamp": "2026-11-13T17:09:52.965Z"
+    },
+    {
+      "id": "f1ba4a81-e55d-4ec1-9458-04aeeb7530f0",
+      "kind": "deed",
+      "action": "claude.responded",
+      "title": "",
+      "actor": "Claude",
+      "timestamp": "2026-11-13T17:03:35.169Z",
+      "summary": "O gate virou uma etapa-agente, mas o `test-cycle-json.mjs` falha contra o `novo-ciclo.json` do projeto de teste, e não conferi o visual no …"
+    },
+    {
+      "id": "7d77acf1-b5dd-412b-a315-c27cc2805a81",
+      "kind": "deed",
+      "action": "claude.responded",
+      "title": "",
+      "actor": "Claude",
+      "timestamp": "2026-11-13T16:54:19.314Z",
+      "summary": "Estou verificando uma falha do teste de ciclo: ela cita `execute_task` contra `execute-task`, e preciso saber se é anterior à minha mudança…"
+    },
+    {
+      "id": "f76ef1fe-9b6f-46a9-9f58-9e3c987b3ad1",
+      "kind": "deed",
+      "action": "claude.file_edited",
+      "title": "js/pipeline.js",
+      "actor": "Claude",
+      "timestamp": "2026-11-13T16:53:55.540Z"
+    },
+    {
+      "id": "8c711fb3-14b0-454c-9aa7-6738d5452e62",
+      "kind": "deed",
+      "action": "claude.session_started",
+      "title": "startup",
+      "actor": "Claude",
+      "timestamp": "2026-11-13T16:23:16.564Z"
+    },
+    {
+      "id": "e1ef0b95-d17d-43ec-a383-694e41ad2113",
+      "kind": "deed",
+      "action": "claude.responded",
+      "title": "",
+      "actor": "Claude",
+      "timestamp": "2026-11-13T16:21:47.776Z",
+      "summary": "Adicionei a seção \"Como escolher quais revisores rodam (code, ux, ui, security)\" ao final de [docs/info/gate-review-decision.md](docs/info/…"
+    },
+    {
+      "id": "76b8ae48-a073-401e-a1d5-caa5beeb9b93",
+      "kind": "deed",
+      "action": "claude.responded",
+      "title": "",
+      "actor": "Claude",
+      "timestamp": "2026-11-13T16:20:38.952Z",
+      "summary": "**Quem decide é o intake, e o `route` aplica a decisão.** Os revisores ligados não são fixos: dependem de um `RISK` e de `SURFACES` que o a…"
+    },
+    {
+      "id": "eab0d453-a2a3-46eb-bd9b-5649463cff1e",
+      "kind": "deed",
+      "action": "claude.responded",
+      "title": "",
+      "actor": "Claude",
+      "timestamp": "2026-11-13T16:18:23.400Z",
+      "summary": "Gravei as decisões em [docs/info/gate-review-decision.md](docs/info/gate-review-decision.md). O arquivo estava vazio. O documento cobre: - …"
+    },
+    {
+      "id": "387f2bb7-2795-4b4d-8012-3e177096cafa",
+      "kind": "deed",
+      "action": "claude.responded",
+      "title": "",
+      "actor": "Claude",
+      "timestamp": "2026-11-13T16:16:30.588Z",
+      "summary": "O arquivo existe, mas está vazio. O modo de planejamento está ativo e só me deixa editar o arquivo do plano. Por isso registro o plano e pe…"
+    },
+    {
+      "id": "9e2e68e8-958d-41ff-95b6-4e73241d98dd",
+      "kind": "deed",
+      "action": "claude.file_written",
+      "title": "docs/info/gate-review-decision.md",
+      "actor": "Claude",
+      "timestamp": "2026-11-13T16:16:27.419Z"
+    },
+    {
+      "id": "710e2e4e-464a-4270-8a8f-3eb62974ff04",
+      "kind": "deed",
+      "action": "claude.responded",
+      "title": "",
+      "actor": "Claude",
+      "timestamp": "2026-11-13T16:07:57.522Z",
+      "summary": "Vou olhar como o gate está definido no projeto de referência e no seu."
+    },
+    {
+      "id": "764661a9-93d1-40b4-b26f-513488c5638b",
+      "kind": "deed",
+      "action": "claude.session_started",
+      "title": "startup",
+      "actor": "Claude",
+      "timestamp": "2026-11-13T16:05:15.522Z"
+    },
+    {
+      "id": "ea436092-e5c9-487d-bb63-3bfede9c2f4d",
+      "kind": "deed",
+      "action": "claude.session_started",
+      "title": "resume",
+      "actor": "Claude",
+      "timestamp": "2026-11-13T16:05:10.574Z"
+    },
+    {
+      "id": "a45b315d-e9af-4b85-a7ef-36791f0b8084",
+      "kind": "deed",
+      "action": "claude.responded",
+      "title": "",
+      "actor": "Claude",
+      "timestamp": "2026-11-13T14:24:06.756Z",
+      "summary": "Corrigi o zoom que encolhia a aba Construction para 25%. Só conferi a sintaxe; não reproduzi o problema no navegador, então teste voltando …"
+    },
+    {
+      "id": "ce7f4cff-fac3-4a11-89f2-d87f8633e69e",
+      "kind": "deed",
+      "action": "claude.file_written",
+      "title": "docs/info/cards-mov.md",
+      "actor": "Claude",
+      "timestamp": "2026-11-13T14:24:02.033Z"
+    },
+    {
+      "id": "6582911a-499c-4bd9-bb4e-d8d1720c70b8",
+      "kind": "deed",
+      "action": "claude.responded",
+      "title": "",
+      "actor": "Claude",
+      "timestamp": "2026-11-13T14:22:09.870Z"
+    },
+    {
+      "id": "9243921c-b76f-4df4-8615-1071c129dc0e",
+      "kind": "deed",
+      "action": "claude.session_started",
+      "title": "startup",
+      "actor": "Claude",
+      "timestamp": "2026-11-13T14:21:24.585Z"
+    },
+    {
+      "id": "946169f4-5077-4420-a1e1-9cd9d0acf3e8",
+      "kind": "deed",
+      "action": "claude.responded",
+      "title": "",
+      "actor": "Claude",
+      "timestamp": "2026-11-13T14:14:58.615Z",
+      "summary": "Implementei o plano: ao rodar `@intake triar a issue 3`, o card da issue aparece em **Pipeline → Tarefas**, na coluna da fase em que ela es…"
+    },
+    {
+      "id": "2170ab32-0345-4225-b7c4-be61cabac196",
+      "kind": "deed",
+      "action": "claude.responded",
+      "title": "",
+      "actor": "Claude",
+      "timestamp": "2026-11-13T14:10:45.983Z",
+      "summary": "A lógica funciona nos dois cenários. Falta só atualizar o README."
+    },
+    {
       "id": "413ac54b-8758-44db-9fd7-d5c4273111e5",
       "kind": "deed",
       "action": "claude.responded",

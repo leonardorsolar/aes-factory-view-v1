@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Hook do Claude Code: registra o que a sessão faz no feed da página Activity (.aes/activity.json).
-// Uso (em .claude/settings.json):  node scripts/activity-hook.mjs <SessionStart|Stop|PostToolUse>
+// Uso (em .claude/settings.json):  node scripts/activity-hook.mjs <SessionStart|UserPromptSubmit|PostToolUse|SubagentStop|Stop>
 // Lê o JSON do hook no stdin. Nunca falha nem imprime nada: um hook com erro não pode atrapalhar a sessão.
 import { execFileSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
@@ -39,6 +39,18 @@ function buildEvent(kind, input, root) {
   if (kind === "SessionStart") {
     return { action: "claude.session_started", title: input.source || "", summary: undefined };
   }
+  if (kind === "UserPromptSubmit") {
+    // "@intake triar a issue 3": marca a etapa como rodando antes de qualquer arquivo existir
+    const prompt = String(input.prompt || "");
+    const agent = (prompt.match(/(?:^|\s)@([\w-]+)/) || [])[1];
+    const issue = (prompt.match(/(?:issue\s*#?\s*|#)(\d+)/i) || [])[1];
+    if (!agent || !issue) return null;
+    return { action: "factory.step_started", title: "#" + issue + " · @" + agent, summary: shorten(prompt), extra: { agent, issue: Number(issue) } };
+  }
+  if (kind === "SubagentStop") {
+    const agent = input.agent_type;
+    return agent ? { action: "factory.step_finished", title: "@" + agent, summary: undefined, extra: { agent } } : null;
+  }
   if (kind === "Stop") {
     return { action: "claude.responded", title: "", summary: lastAssistantText(input.transcript_path) };
   }
@@ -50,7 +62,8 @@ function buildEvent(kind, input, root) {
       if (!file) return null;
       const rel = isAbsolute(file) ? relative(root, file) : file;
       if (rel.startsWith("..") || rel.startsWith(".aes/activity.json")) return null; // fora do projeto ou o próprio feed
-      return { action: tool === "Write" ? "claude.file_written" : "claude.file_edited", title: rel, summary: undefined };
+      const w = rel.replace(/\\/g, "/").match(/^trabalhos\/(.+)-issue-(\d+)\/([^/]+\.md)$/); // saída de uma etapa: liga o evento à tarefa
+      return { action: tool === "Write" ? "claude.file_written" : "claude.file_edited", title: rel, summary: undefined, extra: w ? { repo: w[1], issue: Number(w[2]), file: w[3] } : undefined };
     }
     if (tool === "Bash" && /\bgit\s+commit\b/.test(String(ti.command || ""))) {
       let subject = "";
@@ -82,6 +95,7 @@ function main() {
 
   const ev = { id: randomUUID(), kind: "deed", action: built.action, title: built.title, actor: ACTOR, timestamp: new Date(now).toISOString() };
   if (built.summary) ev.summary = built.summary;
+  if (built.extra) Object.assign(ev, built.extra);
   events = [ev, ...events].slice(0, MAX);
 
   mkdirSync(dirname(file), { recursive: true });

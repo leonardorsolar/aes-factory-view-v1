@@ -382,7 +382,7 @@
 
   // Liga o hook do Activity no .claude/settings.json do projeto, sem apagar o que já existe (mescla por comando).
   const HOOK_CMD = (kind) => 'node "$CLAUDE_PROJECT_DIR/.aes/activity-hook.mjs" ' + kind;
-  const HOOKS = [["SessionStart", ""], ["PostToolUse", "Edit|Write|MultiEdit|Bash"], ["Stop", ""]];
+  const HOOKS = [["SessionStart", ""], ["UserPromptSubmit", ""], ["PostToolUse", "Edit|Write|MultiEdit|Bash"], ["SubagentStop", ""], ["Stop", ""]];
   async function mergeActivityHooks(root) {
     let cfg = {};
     try {

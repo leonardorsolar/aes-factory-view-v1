@@ -35,6 +35,8 @@
     "claude.file_edited": ["i-file", "editou"],
     "claude.file_written": ["i-file", "gravou"],
     "claude.committed": ["i-branch", "commitou"],
+    "factory.step_started": ["i-sparkles", "iniciou uma etapa"],
+    "factory.step_finished": ["i-check", "concluiu uma etapa"],
     "factory.step_saved": ["i-check", "decidiu uma etapa da tarefa"],
     "factory.tour_closed": ["i-sparkles", "fechou o tour da fábrica"],
   };

@@ -27,6 +27,13 @@ Claude Code ──hook──► scripts/activity-hook.mjs ──► .aes/activit
 ```
 
 Os hooks estão em `.claude/settings.json` (precisa de Node). A página relê `.aes/activity.json` a cada 4 s.
+O botão **Baixar skills e agentes** instala o hook em qualquer projeto (`.aes/activity-hook.mjs` + hooks mesclados no `.claude/settings.json`).
+
+### Cards em Pipeline → Tarefas
+A aba Pipeline mostra o desenho do ciclo do projeto (`.claude/cycles/*.json`) e, abaixo, um card por issue, na coluna da fase em que ela está:
+- `UserPromptSubmit` (`@intake triar a issue 3`) → `factory.step_started`: o card aparece com a etapa **rodando**.
+- Saídas em `trabalhos/<repo>-issue-<N>/<etapa>.md`: a 1ª linha (`DECISION:`/`VERDICT:`) é o veredito; `next` do ciclo diz para onde o card vai (`@next`, `@wait-author`, `@rejected`, `@human`).
+- `<etapa>.questions.md` sem `<etapa>.answers.md` → "aguardando sua resposta". `SubagentStop`/`Stop` encerram o "rodando".
 
 ## Depois de editar `template/` (skills e agents)
 

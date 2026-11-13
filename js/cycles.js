@@ -206,9 +206,13 @@
     const l = stage.querySelector("[data-zl]"); if (l) l.textContent = Math.round(view.k * 100) + "%";
   }
   function zoomAt(k, px, py) { const nk = Math.min(ZMAX, Math.max(ZMIN, k)); view.x = px - (px - view.x) * nk / view.k; view.y = py - (py - view.y) * nk / view.k; view.k = nk; applyView(); }
+  let needFit = false; // fit pedido com a área escondida (outra página/aba): refaz quando ela voltar a ter tamanho
   function fit() {
     const stage = host.querySelector("[data-stage]"); if (!stage || !cur) return;
-    const r = stage.getBoundingClientRect(), w = (phases().length + 1) * COLW, h = cur.steps.reduce((m, s) => Math.max(m, pos[s.id].y + NH + 48), 360);
+    const r = stage.getBoundingClientRect();
+    if (r.width < 80 || r.height < 80) { needFit = true; return; }
+    needFit = false;
+    const w = (phases().length + 1) * COLW, h = cur.steps.reduce((m, s) => Math.max(m, pos[s.id].y + NH + 48), 360);
     const k = Math.min(1.25, Math.max(ZMIN, Math.min((r.width - 32) / w, (r.height - 32) / h))); view = { k, x: Math.max(16, (r.width - w * k) / 2), y: 16 }; applyView();
   }
   const toCanvas = (e) => { const r = host.querySelector("[data-stage]").getBoundingClientRect(); return { x: (e.clientX - r.left - view.x) / view.k, y: (e.clientY - r.top - view.y) / view.k }; };
@@ -861,6 +865,7 @@ QA           → status: DONE</pre>
     }
     render(); requestAnimationFrame(fit);
   }
+  if (window.ResizeObserver) new ResizeObserver(() => { if (needFit) requestAnimationFrame(fit); }).observe(host);
   window.addEventListener("hashchange", () => { if (location.hash === "#/pipeline") load(); });
   window.addEventListener("focus", async () => {
     if (location.hash !== "#/pipeline" || !handle || !cur || !saved || dirty || card) return;
