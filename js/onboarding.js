@@ -186,12 +186,17 @@
     const body = el("div", "ob__body ob__body--center");
     body.append(el("div", "ob__done",
       "<strong>Sua fábrica está quase pronta para começar.</strong>" +
-      "<p>Selecione a pasta do seu projeto, conecte sua conta do GitHub em Settings e comece a criar tarefas. " +
+      "<p>Selecione a pasta do seu projeto, conecte sua conta do GitHub, baixe as skills e agentes no menu lateral e comece a criar tarefas. " +
       "Você pode rever estas instruções quando quiser.</p>"));
     const foot = el("div", "ob__foot");
     foot.append(
       button("Voltar", "ob__btn", () => go(index - 1)),
-      button("Ir para Configurações", "ob__btn", () => { close(true); location.hash = "#/config"; }),
+      button("Baixar skills e agentes", "ob__btn", () => {
+        // reaproveita o botão da sidebar (js/scan.js); o clique do usuário mantém a permissão de escrita
+        const b = document.querySelector("[data-skills-install-all]");
+        if (b && !b.disabled) b.click();
+        else alert("Selecione a pasta do projeto primeiro.");
+      }),
       button("Fechar", "ob__btn ob__btn--primary", () => close(true)));
     return [head, body, foot];
   }

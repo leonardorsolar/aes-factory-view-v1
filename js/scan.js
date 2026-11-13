@@ -336,9 +336,11 @@
   }
 
   // ---------- Skills do scan ----------
-  const bundle = window.SCAN_BUNDLE || { skills: {} };
+  const bundle = window.SCAN_BUNDLE || { skills: {}, agents: {} };
   const SKILL_NAMES = ["aes-init"];
   const installBtn = $("[data-skills-install]");
+  const installAllBtn = $("[data-skills-install-all]"); // botão da sidebar (todas as páginas)
+  const allLabel = installAllBtn.querySelector("span");
   const skillsStatus = $("[data-skills-status]");
   const skillsError = $("[data-skills-error]");
 
@@ -359,7 +361,7 @@
 
   async function refreshSkillsStatus() {
     const handle = await getHandle();
-    installBtn.disabled = !handle;
+    installBtn.disabled = installAllBtn.disabled = !handle;
     if (!handle) { skillsStatus.textContent = "Selecione um projeto para baixar as skills."; return; }
     if ((await handle.queryPermission({ mode: "read" })) !== "granted") {
       skillsStatus.textContent = "A skill aes-init será copiada para .claude/skills/ do projeto.";
@@ -382,20 +384,29 @@
     skillsError.hidden = true;
     const handle = await getHandle();
     if (!handle) return;
-    installBtn.disabled = true; installBtn.textContent = "Baixando...";
+    installBtn.disabled = installAllBtn.disabled = true;
+    installBtn.textContent = allLabel.textContent = "Baixando...";
     try {
       // a pasta foi escolhida só para leitura: pede permissão de escrita (precisa de clique do usuário)
       if ((await handle.requestPermission({ mode: "readwrite" })) !== "granted") throw new Error("permissão de escrita negada");
-      const all = bundle.skills;
+      const all = { ...bundle.skills, ...(bundle.agents || {}) };
+      const n = new Set(Object.keys(bundle.skills).map((k) => k.split("/")[2])).size;
+      const na = Object.keys(bundle.agents || {}).length;
       for (const [path, text] of Object.entries(all)) await writeFile(handle, path, text);
       installBtn.textContent = "Instalado!";
-      if (window.Activity) Activity.log("skills.installed", { summary: Object.keys(all).length + " arquivos em .claude/skills" });
+      allLabel.textContent = n + " skills e " + na + " agente(s) instalados!";
+      if (window.Activity) Activity.log("skills.installed", { summary: Object.keys(all).length + " arquivos em .claude/skills e .claude/agents" });
     } catch (err) {
       skillsError.textContent = "Não foi possível baixar as skills: " + err.message;
       skillsError.hidden = false;
       installBtn.textContent = "Baixar skill";
+      allLabel.textContent = "Erro ao baixar";
+      installAllBtn.title = installBtn.title = skillsError.textContent;
     }
-    setTimeout(() => { installBtn.textContent = "Baixar skill"; installBtn.disabled = false; refreshSkillsStatus(); }, 1500);
+    setTimeout(() => {
+      installBtn.textContent = "Baixar skill"; allLabel.textContent = "Baixar skills e agentes";
+      installBtn.disabled = false; refreshSkillsStatus();
+    }, 2500);
   }
 
   function renderCommands() {
@@ -412,12 +423,14 @@
     });
   }
   installBtn.addEventListener("click", installSkills);
+  installAllBtn.addEventListener("click", installSkills);
   renderCommands();
 
   // Atualiza ao entrar na página, ao clicar em Atualizar e ao trocar de projeto
   const onProject = () => (location.hash.replace("#", "") || "/") === "/project";
   function onRoute() {
-    if (onProject()) { showInfo(); loadReport(); refreshSkillsStatus(); }
+    if (onProject()) { showInfo(); loadReport(); }
+    refreshSkillsStatus(); // também habilita/desabilita o botão da sidebar
   }
   $("[data-scan-refresh]").addEventListener("click", () => { lastSig = null; showInfo(); loadReport(); refreshSkillsStatus(); });
   // Enquanto a página está aberta, procura o relatório novo a cada 4s (e ao voltar para a aba)

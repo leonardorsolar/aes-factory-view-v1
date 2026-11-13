@@ -13,7 +13,7 @@ xdg-open index.html     # Linux (ou duplo clique em index.html)
 | Tela | O que faz |
 |---|---|
 | Home | Atalhos para Scan, Diagrama e Notas |
-| Scan the codebase | Gera a visão do projeto em `.aes/project/` (skill `skills/aes-init`) |
+| Scan the codebase | Gera a visão do projeto em `.aes/project/` (skill `template/skills/aes-init`) |
 | Diagrama | Quadros Excalidraw salvos em `.aes/diagrams/` |
 | Notas | Notas em Markdown salvas em `.aes/notes/` |
 | Pipeline | Monta ciclos de trabalho em colunas e cards (arrastar, ligar, zoom). Cada card tem abas Etapa, Agente, Entrega e Aprovação. Grava `.claude/cycles/<ciclo>.md` e `.claude/agents/<agente>.md` na pasta do projeto |
@@ -28,7 +28,7 @@ Claude Code ──hook──► scripts/activity-hook.mjs ──► .aes/activit
 
 Os hooks estão em `.claude/settings.json` (precisa de Node). A página relê `.aes/activity.json` a cada 4 s.
 
-## Depois de editar `skills/`
+## Depois de editar `template/` (skills e agents)
 
 ```bash
 node scripts/build-skills-bundle.mjs   # regenera js/skills-bundle.js

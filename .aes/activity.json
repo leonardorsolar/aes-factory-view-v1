@@ -2,6 +2,247 @@
   "version": 1,
   "events": [
     {
+      "id": "6b0edb7e-cbae-4036-9217-c19faad88f0a",
+      "kind": "deed",
+      "action": "claude.session_started",
+      "title": "startup",
+      "actor": "Claude",
+      "timestamp": "2026-11-13T13:10:06.214Z"
+    },
+    {
+      "id": "e62c513e-f43f-4f92-8530-cd97f236ddba",
+      "kind": "deed",
+      "action": "claude.responded",
+      "title": "",
+      "actor": "Claude",
+      "timestamp": "2026-11-13T12:54:41.474Z",
+      "summary": "Para testar o botão de onboarding e o instalador: 1. **Abra a página.** Sirva a pasta por HTTP, por exemplo `python3 -m http.server 8000` n…"
+    },
+    {
+      "id": "ff57c695-a468-41af-bd37-8a0e91e0e498",
+      "kind": "deed",
+      "action": "claude.responded",
+      "title": "",
+      "actor": "Claude",
+      "timestamp": "2026-11-13T12:54:13.123Z",
+      "summary": "Corrigi o caminho do diagrama em [template/skills/criar-agente/SKILL.md](template/skills/criar-agente/SKILL.md) e regenerei o bundle com o …"
+    },
+    {
+      "id": "5ede92af-d1e0-48ca-958e-2669a050c155",
+      "kind": "deed",
+      "action": "claude.responded",
+      "title": "",
+      "actor": "Claude",
+      "timestamp": "2026-11-13T12:41:52.127Z",
+      "summary": "Entendi: o caminho certo é `.aes/diagrams/<diagrama-excalidraw-x>.excalidraw`. A linha 482 termina em `.md`, e as linhas 101-102 ainda apon…"
+    },
+    {
+      "id": "0d613f3a-9966-4a4f-b6d5-10132f5f468f",
+      "kind": "deed",
+      "action": "claude.responded",
+      "title": "",
+      "actor": "Claude",
+      "timestamp": "2026-11-13T12:06:12.955Z",
+      "summary": "Agora o instalador passa a gravar também os agentes."
+    },
+    {
+      "id": "bf99c171-5027-4c69-b610-ee61d97d25c3",
+      "kind": "deed",
+      "action": "claude.session_started",
+      "title": "startup",
+      "actor": "Claude",
+      "timestamp": "2026-11-13T12:03:48.609Z"
+    },
+    {
+      "id": "b3fa7e16-70b8-4cb6-9ed9-8fcb1a173a5f",
+      "kind": "deed",
+      "action": "claude.responded",
+      "title": "",
+      "actor": "Claude",
+      "timestamp": "2026-11-13T11:33:15.015Z",
+      "summary": "Minha recomendação é um meio-termo: a skill procura o ciclo sozinha e só pergunta quando há dúvida. Os casos são: - **Nenhum ciclo:** pergu…"
+    },
+    {
+      "id": "a716405f-457f-4cdb-a905-9f570feef27e",
+      "kind": "deed",
+      "action": "claude.responded",
+      "title": "",
+      "actor": "Claude",
+      "timestamp": "2026-11-13T10:30:44.441Z",
+      "summary": "**Não, o [SKILL.md](.claude/skills/criar-agente/SKILL.md) quase não cobre essas regras.** Ele ensina a criar agente, skill, memória e hooks…"
+    },
+    {
+      "id": "58ea0c73-a4d0-4788-9816-46ea26ab6943",
+      "kind": "deed",
+      "action": "claude.file_edited",
+      "title": ".claude/skills/criar-agente/SKILL.md",
+      "actor": "Claude",
+      "timestamp": "2026-11-13T10:30:35.024Z"
+    },
+    {
+      "id": "1cab9f8d-1ccc-4452-981b-54703fe4aeed",
+      "kind": "deed",
+      "action": "claude.responded",
+      "title": "",
+      "actor": "Claude",
+      "timestamp": "2026-11-13T10:27:19.795Z",
+      "summary": "Reescrevi [docs/info/regras.md](docs/info/regras.md) em 7 seções curtas, com base em [cycles/prd-spec.json](cycles/prd-spec.json). Não rode…"
+    },
+    {
+      "id": "23d12193-8ba6-4a61-be20-bc23e6cc3c05",
+      "kind": "deed",
+      "action": "claude.responded",
+      "title": "",
+      "actor": "Claude",
+      "timestamp": "2026-11-13T10:26:15.743Z"
+    },
+    {
+      "id": "f05dbd38-7e78-4615-a081-a3626a9ab931",
+      "kind": "deed",
+      "action": "claude.file_written",
+      "title": "docs/info/regras.md",
+      "actor": "Claude",
+      "timestamp": "2026-11-13T10:26:10.468Z"
+    },
+    {
+      "id": "bdd74191-f936-40f3-8488-018e69f63231",
+      "kind": "deed",
+      "action": "claude.session_started",
+      "title": "startup",
+      "actor": "Claude",
+      "timestamp": "2026-11-13T10:24:32.380Z"
+    },
+    {
+      "id": "20725a29-e064-4955-b7c5-10d9f0923731",
+      "kind": "deed",
+      "action": "claude.session_started",
+      "title": "resume",
+      "actor": "Claude",
+      "timestamp": "2026-11-13T09:40:00.444Z"
+    },
+    {
+      "id": "7922e5a8-fd2d-46a0-ba9c-f84a211f7169",
+      "kind": "deed",
+      "action": "claude.session_started",
+      "title": "resume",
+      "actor": "Claude",
+      "timestamp": "2026-11-13T09:39:43.948Z"
+    },
+    {
+      "id": "e73b25db-f4b7-4453-a3d4-ae2ec1ce304e",
+      "kind": "deed",
+      "action": "claude.session_started",
+      "title": "startup",
+      "actor": "Claude",
+      "timestamp": "2026-11-13T09:39:42.766Z"
+    },
+    {
+      "id": "052178fb-8668-4aa0-b47a-137372238071",
+      "kind": "deed",
+      "action": "claude.responded",
+      "title": "",
+      "actor": "Claude",
+      "timestamp": "2026-11-12T23:27:21.544Z",
+      "summary": "Remove as skills da lista de agentes e o tratamento do prefixo `skill:`."
+    },
+    {
+      "id": "8df2f6c7-c6e7-46a6-8093-c0b2c2bfe981",
+      "kind": "deed",
+      "action": "claude.session_started",
+      "title": "startup",
+      "actor": "Claude",
+      "timestamp": "2026-11-12T23:26:37.389Z"
+    },
+    {
+      "id": "7cc47d1d-fb2c-4096-bd66-dd8b2341c7e8",
+      "kind": "deed",
+      "action": "claude.responded",
+      "title": "",
+      "actor": "Claude",
+      "timestamp": "2026-11-12T23:25:08.457Z",
+      "summary": "Estes são os arquivos que eu alterei, por tarefa. O `git status` mostra bem mais mudanças (ver o aviso no final). **Skill `criar-agente`** …"
+    },
+    {
+      "id": "cdb114db-9259-4ca6-a9b7-a567cdb9eff0",
+      "kind": "deed",
+      "action": "claude.responded",
+      "title": "",
+      "actor": "Claude",
+      "timestamp": "2026-11-12T23:14:18.803Z",
+      "summary": "Alinhei a skill `criar-agente` e o modal \"Vereditos\" ao contrato de veredito do plano. Não toquei no `simple02`, que está fora deste repo. …"
+    },
+    {
+      "id": "bbf43888-a850-4fe5-8579-d657b158d954",
+      "kind": "deed",
+      "action": "claude.responded",
+      "title": "",
+      "actor": "Claude",
+      "timestamp": "2026-11-12T23:12:20.231Z",
+      "summary": "Agora reescrevo o modal \"Vereditos\" e os textos relacionados."
+    },
+    {
+      "id": "9f2e1943-76af-48e3-b681-30f5ca9d6419",
+      "kind": "deed",
+      "action": "claude.responded",
+      "title": "",
+      "actor": "Claude",
+      "timestamp": "2026-11-12T22:51:52.405Z",
+      "summary": "Nada muda no software `novo-teste-aes-simple02` só por adicionar o veredito. Ele é só uma linha de texto em um arquivo de ciclo, e nenhum c…"
+    },
+    {
+      "id": "a7079cac-e3a2-49b8-9d99-bf3092dba574",
+      "kind": "deed",
+      "action": "claude.responded",
+      "title": "",
+      "actor": "Claude",
+      "timestamp": "2026-11-12T22:41:04.291Z",
+      "summary": "O campo **Agente** do card agora também lista as skills de `.claude/skills` do projeto selecionado. Só chequei a sintaxe do JavaScript, não…"
+    },
+    {
+      "id": "ae3f023e-6296-4bb2-b896-0df31ac71ae2",
+      "kind": "deed",
+      "action": "claude.responded",
+      "title": "",
+      "actor": "Claude",
+      "timestamp": "2026-11-12T21:47:17.568Z",
+      "summary": "Troquei o botão \"Ir para Configurações\" do diálogo \"Tudo pronto!\" por **Baixar todas as skills**, em [js/onboarding.js](js/onboarding.js). …"
+    },
+    {
+      "id": "3d79c700-7ce6-403e-965f-101856ebe424",
+      "kind": "deed",
+      "action": "claude.responded",
+      "title": "",
+      "actor": "Claude",
+      "timestamp": "2026-11-12T21:31:57.948Z",
+      "summary": "Troquei o botão \"Settings\" da barra lateral por **Baixar todas as skills**. Não testei no navegador, só chequei a sintaxe do JavaScript e a…"
+    },
+    {
+      "id": "40e66aad-d97f-4f8c-a1bc-04d4fb139f96",
+      "kind": "deed",
+      "action": "claude.responded",
+      "title": "",
+      "actor": "Claude",
+      "timestamp": "2026-11-12T21:30:24.777Z",
+      "summary": "Ajustei o playground para conter só as duas skills. Não instalei nada no projeto de destino e não rodei a skill, então nada disso foi testa…"
+    },
+    {
+      "id": "0c876dbd-13ad-45ff-9ef3-41dfa4c68fbb",
+      "kind": "deed",
+      "action": "claude.responded",
+      "title": "",
+      "actor": "Claude",
+      "timestamp": "2026-11-12T21:22:38.115Z",
+      "summary": "Vou começar explorando as pastas envolvidas."
+    },
+    {
+      "id": "c51c5f8d-b625-4c78-ab90-6252b51a0a08",
+      "kind": "deed",
+      "action": "claude.session_started",
+      "title": "startup",
+      "actor": "Claude",
+      "timestamp": "2026-11-12T21:15:52.884Z"
+    },
+    {
       "id": "55c4321c-4326-4e3c-a3a0-7d4df52aa2eb",
       "kind": "deed",
       "action": "claude.responded",

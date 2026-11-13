@@ -52,6 +52,7 @@ Um agente completo tem 5 partes: **cérebro** (modelo), **contexto** (o que ele 
    - O que ele nunca pode fazer?
    - Quais ferramentas ele precisa? (só leitura, edição, terminal, web, conectores)
    - Em que pontos deve parar e pedir aprovação?
+   - Se o agente for uma etapa de um ciclo (`cycles/<ciclo>.json`): ele não precisa conhecer o ciclo, só respeitá-lo. Leia a etapa dele no ciclo e copie para o agente, sem inventar: os arquivos de entrada (`reads`), o arquivo de saída (`writes`) e a lista de vereditos (chaves de `next`). Veja "Regras de entrega".
 2. Resuma as 5 partes e confirme o nome com o usuário.
 3. Crie `.claude/agents/<agente>.md` usando o modelo abaixo.
 4. Teste: peça ao usuário para chamar o agente pelo nome (`@<agente>`) em uma tarefa real. Ajuste o arquivo conforme o resultado; a primeira versão raramente é a final.
@@ -71,6 +72,7 @@ Você é <papel>. Seu objetivo é <tarefa>.
 ## Antes de começar
 - Leia `contexto/contexto.md`.
 - Leia `.claude/memory/<agente>-memoria.md` e aplique as lições.
+- Leia somente estes arquivos de entrada: <arquivos lidos>.
 
 ## Processo
 1. <passo>
@@ -80,9 +82,12 @@ Você é <papel>. Seu objetivo é <tarefa>.
 ## Entrega
 - Formato: <formato>
 - Local: <caminho do arquivo de saída>
+- 1ª linha do arquivo: `VERDICT: <PALAVRA>`, sem nada antes. Vereditos permitidos: <A | B | C>.
+- Use exatamente uma dessas palavras (maiúsculas, sem variações). Depois da 1ª linha, explique em poucas linhas.
 
 ## Regras
 - Nunca <restrição>.
+- Nunca invente veredito, nem grave em outro arquivo além do local de entrega.
 - Se a tarefa for ambígua, faça perguntas numeradas e espere a resposta.
 - Pare e peça aprovação antes de <ação de risco>.
 ```
@@ -91,6 +96,17 @@ Regras para preencher:
 - `name` e `description` são obrigatórios. A `description` decide quando o agente é acionado, então seja específico.
 - Restrinja `tools`: agentes de análise ou planejamento só leem e escrevem documentos; só quem implementa precisa de edição de código e terminal.
 - Uma responsabilidade por agente. Se o trabalho tiver duas fases, crie dois agentes.
+
+## Regras de entrega (agente e skill de uma etapa de ciclo)
+
+Valem ao criar e ao ajustar. Fonte: `docs/info/regras.md`; a verdade de cada etapa é o `cycles/<ciclo>.json`.
+
+- **Veredito:** a 1ª linha do arquivo de saída é `VERDICT: PALAVRA` (triagem: `DECISION: PALAVRA`). Uma palavra em MAIÚSCULAS, sem espaços (hífen é aceito, como `NEEDS-INFO`), e nada antes dela.
+- **Só vereditos da lista:** a palavra tem de ser exatamente uma das chaves de `next` da etapa. Outra palavra deixa o fluxo sem destino.
+- **Quando usar cada um:** descreva no agente quando cada veredito se aplica (ex.: `BLOCKED` quando falta algo que só uma pessoa dá).
+- **Entrada e saída:** o agente lê só os arquivos de `reads` e grava só o arquivo de `writes`.
+- **Mesma lista em 3 lugares:** `## Entrega` do agente, instruções da skill (se houver) e `next` do ciclo devem ser idênticos. Se o ciclo existir, ele manda: ajuste o agente e a skill a ele, não o contrário. Se for preciso mudar a lista, avise o usuário para alterar também o ciclo.
+- **Sem destinos no agente:** o agente não decide para onde o fluxo vai (próxima etapa, humano, fim). Só entrega o veredito.
 
 ## Nível 2: Skill (playbook)
 
@@ -123,9 +139,10 @@ description: <o que a skill faz e quando usar>
 - [ ] <critério verificável>
 
 ## Formato de saída
-<estrutura esperada>
+1ª linha: `VERDICT: <A | B | C>` (mesma lista do `## Entrega` do agente), depois <estrutura esperada>.
 
 ## Erros a evitar
+- Texto antes da linha de veredito, ou veredito fora da lista.
 - <erro comum>
 ```
 
@@ -233,6 +250,7 @@ Para um agente por fase (ex.: requisitos, arquitetura, implementação, testes):
 - [ ] `CLAUDE.md` e `contexto/contexto.md` existem e foram testados em sessão nova
 - [ ] O agente tem `name`, `description` específica, `tools` restritas e as 5 partes
 - [ ] A skill tem fluxo, checklist e formato de saída, e está atribuída ao agente
+- [ ] Se for etapa de ciclo: entradas, saída e vereditos do agente e da skill são idênticos aos da etapa em `cycles/<ciclo>.json`, e a 1ª linha da entrega é `VERDICT: PALAVRA`
 - [ ] A memória existe, é lida antes de cada tarefa e recebeu ao menos uma lição
 - [ ] O agente foi testado em pelo menos duas tarefas diferentes
 - [ ] Se houver hooks: script executável, `settings.json` válido e evento testado

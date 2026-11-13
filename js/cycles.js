@@ -20,6 +20,7 @@
   let handle = null, files = [], inv = { agents: [], skills: [] }, cur = null, saved = false, dirty = false;
   let pos = {}, view = { x: 24, y: 16, k: 1 }, sel = null, msg = "", bad = false;
   let card = null; // { id, tab, agent }
+  let diskText = ""; // conteúdo de .claude/cycles/<ciclo>.md na última leitura/gravação (detecta edição externa)
   let linkTo = null, drag = null, phMenu = null;
 
   // ---------- pasta do projeto ----------
@@ -119,7 +120,7 @@
 
   // ---------- carregar / criar ----------
   async function openCycle(id) {
-    try { cur = M.parse(await readFile(".claude/cycles/" + id + ".md")); cur.id = id; saved = true; dirty = false; }
+    try { diskText = await readFile(".claude/cycles/" + id + ".md"); cur = M.parse(diskText); cur.id = id; saved = true; dirty = false; }
     catch (e) { cur = null; msg = "Não consegui ler " + id + ".md"; bad = true; return; }
     afterLoad();
   }
@@ -138,8 +139,16 @@
     try {
       if (!(await canWrite())) { msg = "Permissão de escrita negada."; bad = true; return renderBar(); }
       if (!saved) { cur.id = M.slug(cur.label) || cur.id || "ciclo"; if (files.includes(cur.id) && !confirm("Já existe .claude/cycles/" + cur.id + ".md. Substituir?")) return; }
-      await writeFile(".claude/cycles/" + cur.id + ".md", M.serialize(cur));
+      diskText = M.serialize(cur);
+      await writeFile(".claude/cycles/" + cur.id + ".md", diskText);
       saved = true; dirty = false; msg = "Salvo em .claude/cycles/" + cur.id + ".md"; bad = false;
+      // grava também o ciclo em JSON (formato aes-cycle) na mesma pasta do projeto
+      try {
+        if (window.CycleJson) {
+          await writeFile(".claude/cycles/" + cur.id + ".json", JSON.stringify(window.CycleJson.toPack(cur).pack, null, 2) + "\n");
+          msg = "Salvo em .claude/cycles/" + cur.id + ".md e .json";
+        }
+      } catch (e) { msg += " (o .json não foi gravado: " + e.message + ")"; bad = true; }
       if (window.Activity) Activity.log("cycle.saved", { title: cur.label || cur.id });
       files = await listCycles(); inv = await listInventory();
     } catch (e) { msg = "Não salvo: " + e.message; bad = true; }
@@ -282,7 +291,7 @@
       const isA = s.kind === "agent", list = isA ? inv.agents : inv.skills, slug = M.slug(s.ref), item = list.find((x) => x.name === slug);
       const val = item ? slug : (s.ref || card.newRef ? "__new__" : "");
       const choices = [["", list.length ? "— escolha —" : "— nenhum encontrado —"]].concat(list.map((x) => [x.name, x.name + (x.refs ? " · " + x.refs + " referência" + (x.refs > 1 ? "s" : "") : "")])).concat([["__new__", "＋ Criar novo…"]]);
-      h += field(isA ? "Agente" : "Skill", `escolha um que já está em <code>.claude/${isA ? "agents" : "skills"}</code> ou crie um novo`,
+      h += field(isA ? "Agente" : "Skill", `escolha um que já está em <code>.claude/${isA ? "agents</code>" : "skills</code>"} ou crie um novo`,
         `<select class="fs-in" data-pick>${opts(choices, val)}</select>` + (val === "__new__" ? `<input class="fs-in" data-s="ref" value="${esc(s.ref)}" placeholder="nome novo, ex.: ${isA ? "architect" : "aes-create-prd"}">` : "")
         + (item ? `<button class="btn cy-edbtn" data-ed-open>Ver e editar arquivos${item.refs ? " (" + (item.refs + 1) + ")" : ""}</button>` : "")
         + (item && item.refs ? `<span class="fs-muted">Est${isA ? "e agente" : "a skill"} tem a pasta <code>references/</code> com ${item.refs} arquivo(s).</span>` : ""));
@@ -295,7 +304,7 @@
     if (s.kind === "command") h += field("Comando", "roda na raiz do projeto", `<input class="fs-in" data-s="ref" value="${esc(s.ref)}" placeholder="ex.: npm test">`);
     if (s.kind === "human") h += `<p class="fs-muted">Esta etapa espera uma pessoa.</p>`;
     if (s.kind === "agent") h += agentHtml(s);
-    h += `<div class="fs-field fs-field--col cy-nd__v"><div class="fs-field__name">Vereditos → para onde o fluxo vai${helpBtn("verdicts")}</div><div class="fs-field__help">A 1ª linha da entrega diz o veredito; cada um leva a uma etapa. Sem veredito, segue para o próximo card.</div>${rows || `<span class="fs-muted">nenhum</span>`}`
+    h += `<div class="fs-field fs-field--col cy-nd__v"><div class="fs-field__name">Vereditos → para onde o fluxo vai${helpBtn("verdicts")}</div><div class="fs-field__help">A 1ª linha da entrega é <code>VERDICT: PALAVRA</code>; a palavra tem de ser uma destas, e cada uma leva a uma etapa. Sem veredito, segue para o próximo card. O agente deve ter a mesma lista no <code>## Entrega</code>.</div>${rows || `<span class="fs-muted">nenhum</span>`}`
       + `<div class="cy-vrow"><input class="fs-in" data-vnew placeholder="NOVO VEREDITO (ex.: FAIL)"><button class="btn" data-vadd>Adicionar</button></div></div>`;
     h += field("Aprovação humana", `o modo do ciclo (${esc(M.APPROVALS[cur.approval])}) está no topo; aqui você marca etapas que sempre esperam você`, `<select class="fs-in" data-s="approve"><option value="no"${s.approve ? "" : " selected"}>segue sozinho</option><option value="yes"${s.approve ? " selected" : ""}>para e espera você</option></select>`);
     return h;
@@ -305,8 +314,8 @@
     const first = Object.keys(s.next)[0] || "DONE", readers = s.writes ? cur.steps.filter((x) => x.id !== s.id && (x.reads || []).includes(s.writes)) : [];
     const vs = Object.entries(s.next).map(([v, dd]) => `<li><code>${esc(v)}</code><small>→ ${esc(dest(dd))}</small></li>`).join("");
     return `<div class="fs-field__name">Arquivo${helpBtn("writes")}</div><input class="fs-in" data-s="writes" value="${esc(s.writes)}" placeholder="ex.: prd.md">`
-      + `<p class="fs-muted cy-nd__p">É a prova de que a etapa terminou. A <strong>1ª linha</strong> é o veredito; o resto explica.</p>`
-      + `<pre class="cy-nd__pre">${esc(first)}\n(explicação em poucas linhas)</pre>`
+      + `<p class="fs-muted cy-nd__p">É a prova de que a etapa terminou. A <strong>1ª linha</strong> é <code>VERDICT: PALAVRA</code>; o resto explica.</p>`
+      + `<pre class="cy-nd__pre">VERDICT: ${esc(first)}\n(explicação em poucas linhas)</pre>`
       + (vs ? `<ul class="cy-io cy-io--v">${vs}</ul>` : `<p class="fs-muted">Sem vereditos: segue para o próximo card.</p>`)
       + `<div class="cy-nd__sub fs-field__name">Lida por</div>` + (readers.length ? `<div class="cy-chips">${readers.map((x) => `<span class="cy-pill">${esc(x.label || x.id)}</span>`).join("")}</div>` : `<p class="fs-muted">${s.writes ? "Nenhuma etapa lê este arquivo ainda. Adicione-o na Entrada da etapa que precisa dele." : "Defina o arquivo para ver quem o lê."}</p>`)
       + `<div class="cy-nd__sub fs-field__name">Status que a entrega libera${helpBtn("status")}</div><input class="fs-in" data-s="status" value="${esc(s.status)}" placeholder="ex.: READY_FOR_ARCH"><p class="fs-muted">Rótulo do estado da tarefa, ex.: READY_FOR_ARCH → READY_FOR_BUILD → DONE.</p>`;
@@ -336,7 +345,11 @@
 
   // ---------- eventos ----------
   const $ = (sel) => host.querySelector(sel);
-  function openCard(id) { card = { id, agent: null, msg: "", bad: false }; sel = id; const s = step(id); renderCard(); renderStage(); if (s && s.kind === "agent" && s.ref) loadAgent(s); }
+  function openCard(id) {
+    card = { id, agent: null, msg: "", bad: false }; sel = id; const s = step(id); renderCard(); renderStage(); if (s && s.kind === "agent" && s.ref) loadAgent(s);
+    // relê .claude/agents e .claude/skills do projeto (podem ter mudado, ex.: depois de "Baixar todas as skills")
+    if (handle) listInventory().then((i) => { inv = i; if (card && card.id === id) renderCard(); });
+  }
   function closeCard() { const d = $("[data-card]"); card = null; if (d && d.open) d.close(); renderStage(); }
   function syncStep(s) { renderStage(); const h = $(".cy-card__h .fs-h3"); if (h) h.textContent = s.label || s.id; }
 
@@ -402,33 +415,38 @@
 
   const HELP = {
     verdicts: { title: "Vereditos", html: `
-      <p><strong>Veredito é o resultado de uma etapa</strong>, uma palavra curta que diz como ela terminou. Cada veredito leva a um destino: a próxima etapa, uma etapa anterior, o fim do ciclo ou você.</p>
+      <p><strong>Veredito é o resultado de uma etapa</strong>, uma palavra curta em <strong>MAIÚSCULAS</strong> que diz como ela terminou. Cada veredito leva a um destino: a próxima etapa, uma etapa anterior, o fim do ciclo ou você.</p>
       <h4>Como funciona</h4>
       <ol><li>A etapa grava a sua entrega (ex.: <code>review.md</code>).</li>
-      <li>A <strong>1ª linha</strong> do arquivo é o veredito, por exemplo <code>FAIL</code>.</li>
-      <li>O ciclo procura esse veredito na etapa e segue para o destino ligado a ele.</li>
-      <li>Sem veredito ligado, segue para o próximo card.</li></ol>
+      <li>A <strong>1ª linha</strong> do arquivo é o veredito, no formato <code>VERDICT: FAIL</code> (a triagem usa <code>DECISION: ACCEPT</code>). Nenhum texto vem antes dela.</li>
+      <li>A palavra tem de ser <strong>exatamente</strong> uma das que você ligou aqui. Se vier outra, o ciclo não sabe para onde ir.</li>
+      <li>Sem veredito ligado, o fluxo segue para o próximo card.</li>
+      <li><strong>O agente precisa conhecer a mesma lista:</strong> ela fica no <code>## Entrega</code> do <code>.claude/agents/&lt;agente&gt;.md</code> e deve ser idêntica à <code>- vereditos:</code> do ciclo.</li></ol>
       <h4>Tipos comuns</h4>
       <table class="cy-ht"><tr><th>Veredito</th><th>Significa</th><th>Destino típico</th></tr>
       <tr><td><code>DONE</code></td><td>terminou bem</td><td>próxima etapa</td></tr>
-      <tr><td><code>APPROVED</code></td><td>revisão aprovou</td><td>próxima etapa ou fim</td></tr>
+      <tr><td><code>APPROVED</code></td><td>revisão aprovou</td><td>próxima etapa ou <code>@fim</code></td></tr>
       <tr><td><code>FAIL</code></td><td>teste ou gate falhou</td><td>volta para Build</td></tr>
       <tr><td><code>CHANGES</code></td><td>revisor pediu mudanças</td><td>volta para Build</td></tr>
-      <tr><td><code>BLOCKED</code></td><td>falta algo para continuar</td><td><code>@humano</code></td></tr></table>
-      <p class="fs-muted">Os nomes são livres: crie os seus (ex.: <code>RISCO_ALTO</code>). Use maiúsculas, sem espaços.</p>
+      <tr><td><code>BLOCKED</code></td><td>falta algo que só uma pessoa dá</td><td><code>@humano</code></td></tr>
+      <tr><td><code>ACCEPT</code></td><td>triagem: vale construir</td><td>próxima etapa</td></tr>
+      <tr><td><code>NEEDS-INFO</code></td><td>triagem: falta informação do autor</td><td><code>@humano</code></td></tr>
+      <tr><td><code>REJECT</code></td><td>triagem: não vale construir</td><td><code>@fim</code></td></tr></table>
+      <p class="fs-muted">Os nomes são livres: crie os seus (ex.: <code>RISCO_ALTO</code>). Use maiúsculas e sem espaços (hífen é aceito, como em <code>NEEDS-INFO</code>).</p>
       <h4>Destinos especiais</h4>
       <ul><li><code>@humano</code>: o ciclo para e espera você.</li><li><code>@fim</code>: o ciclo termina.</li><li>qualquer etapa: o fluxo vai para ela (se for uma etapa anterior, vira um retorno).</li></ul>
       <h4>Exemplo</h4>
       <pre>Etapa: Code review
 - vereditos: APPROVED → pr; CHANGES → build; BLOCKED → @humano</pre>
-      <p>Se <code>review.md</code> começar com <code>CHANGES</code>, o fluxo volta para <strong>Build</strong>.</p>
+      <p>Se <code>review.md</code> começar com <code>VERDICT: CHANGES</code>, o fluxo volta para <strong>Build</strong>.</p>
       <h4>Como usar</h4>
       <ul><li>Aqui, na aba <strong>Etapa</strong>: digite o nome e clique em Adicionar; depois escolha o destino na lista.</li>
       <li>Ou no canvas: arraste a bolinha <strong>●</strong> do card até outro card e escolha o veredito.</li></ul>
       <h4>Onde visualizar</h4>
       <ul><li><strong>No canvas:</strong> setas tracejadas com o nome do veredito; <span class="cy-or">laranja</span> com "· volta" é um retorno.</li>
-      <li><strong>No arquivo:</strong> <code>.claude/cycles/&lt;ciclo&gt;.md</code>, linha <code>- vereditos:</code> de cada etapa.</li>
-      <li><strong>Na entrega:</strong> a 1ª linha do arquivo que a etapa gravou.</li></ul>` },
+      <li><strong>No arquivo:</strong> <code>.claude/cycles/&lt;ciclo&gt;.md</code> (linha <code>- vereditos:</code>) e <code>.claude/cycles/&lt;ciclo&gt;.json</code> (campo <code>next</code>).</li>
+      <li><strong>Na entrega:</strong> a 1ª linha do arquivo que a etapa gravou.</li></ul>
+      <p class="fs-muted">Criou o agente com a skill <code>criar-agente</code>? Ela já grava esta lista no agente e no ciclo. Se mudar aqui, mude também no <code>## Entrega</code> do agente.</p>` },
   };
   HELP.skillAgent = { title: "Rodar a skill dentro de um agente", html: `
       <p>Uma skill pode ser executada de <strong>dois jeitos</strong>. Este campo escolhe qual.</p>
@@ -464,7 +482,7 @@
       <p><strong>É a entrega da etapa:</strong> o arquivo que ela produz e que a próxima etapa lê. É assim que os agentes passam o trabalho um para o outro (handoff), sem depender da memória da conversa.</p>
       <h4>Como funciona</h4>
       <ol><li>A etapa faz o trabalho e grava este arquivo.</li>
-      <li>A <strong>1ª linha</strong> é o veredito (veja o <strong>?</strong> de Vereditos), por exemplo <code>DONE</code>.</li>
+      <li>A <strong>1ª linha</strong> é o veredito (veja o <strong>?</strong> de Vereditos), por exemplo <code>VERDICT: DONE</code>.</li>
       <li>O resto é o conteúdo: o PRD, a decisão, o relatório.</li>
       <li>A etapa seguinte lê o arquivo antes de começar.</li></ol>
       <h4>Exemplos</h4>
@@ -837,9 +855,17 @@ QA           → status: DONE</pre>
     catch (e) { return emptyState("Sem permissão de leitura na pasta do projeto.", "Permitir", load); }
     files = await listCycles(); inv = await listInventory();
     if (!cur) { if (files.length) await openCycle(files[0]); if (!cur) blankCycle(); }
+    else if (saved && !dirty && files.includes(cur.id)) {
+      // o arquivo pode ter sido editado fora da página (Claude Code, editor): relê se mudou e não há alteração pendente
+      try { if ((await readFile(".claude/cycles/" + cur.id + ".md")) !== diskText) await openCycle(cur.id); } catch (e) {}
+    }
     render(); requestAnimationFrame(fit);
   }
   window.addEventListener("hashchange", () => { if (location.hash === "#/pipeline") load(); });
+  window.addEventListener("focus", async () => {
+    if (location.hash !== "#/pipeline" || !handle || !cur || !saved || dirty || card) return;
+    try { if ((await readFile(".claude/cycles/" + cur.id + ".md")) !== diskText) { await openCycle(cur.id); render(); } } catch (e) {}
+  });
   window.addEventListener("aes:project-changed", () => { cur = null; dirty = false; if (location.hash === "#/pipeline") load(); });
   window.addEventListener("beforeunload", (e) => { if (dirty) { e.preventDefault(); e.returnValue = ""; } });
   if (location.hash === "#/pipeline") load();
