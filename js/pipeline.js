@@ -32,7 +32,8 @@
     if (Math.max(0, ...Object.values(count)) < 2) { Object.keys(lv).forEach((k) => { lv[k] = 0; }); return { lv, n: 1 }; }
     return { lv, n };
   }
-  const gridCols = (ns) => ns.map((n) => `minmax(${150 * n + 64 * (n - 1)}px, ${n}fr)`).join(" ");
+  const CARD_W = 170, LV_GAP = 64;
+  const gridCols = (ns) => ns.map((n) => `${CARD_W * n + LV_GAP * (n - 1)}px`).join(" ");
 
 
   const NS = "http://www.w3.org/2000/svg";
@@ -164,7 +165,7 @@
     src.append(el("span", "pp__from", "fonte: " + from));
     box.append(el("h2", "pp__title", "Desenho da pipeline - " + (cfg.cycle.label || cfg.cycle.id)), src);
     box.append(el("p", "pp__hint", "Espelha o ciclo do projeto. Cada caixa é uma etapa (clique para ver o resumo); setas mostram a ordem" + (profile.label ? " do perfil “" + profile.label + "”" : "") + "; caixas apagadas ficam fora do perfil."));
-    const grid = el("div", "pp__grid");
+    const grid = el("div", "pp__grid pp__grid--flow");
     const widths = cols.map((c) => levels(cfg, c).n);
     if (widths.some((n) => n > 1)) grid.style.gridTemplateColumns = gridCols(widths);
     cols.forEach((c) => {
@@ -176,7 +177,8 @@
       const subs = Array.from({ length: L.n }, () => { const d = el("div", "pp__sub"); if (L.n > 1) list.append(d); return d; });
       c.steps.forEach((s) => {
         const b = el("div", "pp__step" + (on.has(s.id) ? " is-on" : "") + (s.extra ? " is-extra" : ""));
-        b.append(el("strong", null, s.label || s.id), el("small", null, s.extra ? "CI" : mark(s) + who(s) + ((s.run || {}).model ? " · " + s.run.model : "")));
+        const sub = el("small", null, s.extra ? "CI" : mark(s) + who(s) + ((s.run || {}).model ? " · " + s.run.model : "")); sub.title = sub.textContent;
+        b.append(el("strong", null, s.label || s.id), sub);
         b.dataset.step = s.id;
         if (!s.extra) { b.tabIndex = 0; b.setAttribute("role", "button"); b.classList.add("is-click"); const open = () => info(cfg, s, on.has(s.id)); b.addEventListener("click", open); b.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); } }); }
         (L.n > 1 ? subs[L.lv[s.id]] : list).append(b);
@@ -197,7 +199,8 @@
     const how = el("p", "pp__hint", "");
     how.innerHTML = "O card não guarda estado: a cada ~3 s a tela o recalcula. <strong>Por onde passou</strong> vem dos arquivos em <code>trabalhos/&lt;repo&gt;-issue-N/</code> (a 1ª linha de cada um é o veredito, ex.: <code>ACCEPT</code>). <strong>Rodando agora</strong> vem do hook (<code>.aes/activity.json</code>). <strong>Para onde vai</strong> e <strong>a coluna</strong> vêm do ciclo (veredito → próxima etapa, esperar o autor ou encerrar; campo <code>phase</code> da etapa). Se o hook atrasar, os arquivos continuam dizendo o estado correto.";
     const note = el("p", "pp__hint", ""); board.append(how, note);
-    const bgrid = el("div", "pp__grid");
+    const bgrid = el("div", "pp__grid pp__grid--flow"); // mesmas colunas do desenho, para alinhar
+    if (grid.style.gridTemplateColumns) bgrid.style.gridTemplateColumns = grid.style.gridTemplateColumns;
     if (widths.some((n) => n > 1)) bgrid.style.gridTemplateColumns = gridCols(widths);
     const taskCols = new Map();
     cols.forEach((c) => {
