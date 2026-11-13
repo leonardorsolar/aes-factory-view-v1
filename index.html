@@ -208,7 +208,14 @@
 
         <!-- ===== Pipeline: ciclos em colunas e cards (js/cycles.js) ===== -->
         <section class="page page--cycles" data-page="/pipeline" data-title="Pipeline" hidden>
-          <div class="cy" data-cycles></div>
+          <div class="pipe-tabs tabs" role="tablist" data-pipe-tabs>
+            <button class="tab is-active" type="button" role="tab" data-pipe-tab="construction">Construction</button>
+            <button class="tab" type="button" role="tab" data-pipe-tab="pipeline">Pipeline</button>
+          </div>
+          <div class="pipe-panel" data-pipe-panel="construction">
+            <div class="cy" data-cycles></div>
+          </div>
+          <div class="pipe-panel" data-pipe-panel="pipeline" hidden></div>
         </section>
 
         <section class="page page--activity" data-page="/activity" data-title="Activity" hidden>

@@ -196,3 +196,9 @@
 .cy-col--new button { padding: 4px 10px; font: inherit; font-size: 12px; color: var(--color-text-muted); background: var(--color-bg); border: 1px dashed var(--color-text-muted); border-radius: var(--radius-sm); cursor: pointer; }
 .cy-col--new button:hover { color: var(--color-text); border-color: var(--color-text); border-style: solid; }
 .cy-dlg--sm hr { width: 100%; border: 0; border-top: 1px solid var(--color-border); }
+
+/* Abas da página Pipeline (Construction / Pipeline) */
+.pipe-tabs { margin: 0; padding: 0 var(--space-4); flex: none; }
+.pipe-panel { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.pipe-panel[hidden] { display: none; }
+.pipe-panel > .cy { flex: 1; min-height: 0; }

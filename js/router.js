@@ -30,3 +30,12 @@
   window.addEventListener("hashchange", showPage);
   showPage();
 })();
+
+// Abas da página Pipeline: Construction (ciclos) e Pipeline (vazia por enquanto).
+(() => {
+  const tabs = document.querySelectorAll("[data-pipe-tab]");
+  tabs.forEach((b) => b.addEventListener("click", () => {
+    tabs.forEach((t) => t.classList.toggle("is-active", t === b));
+    document.querySelectorAll("[data-pipe-panel]").forEach((p) => { p.hidden = p.dataset.pipePanel !== b.dataset.pipeTab; });
+  }));
+})();
