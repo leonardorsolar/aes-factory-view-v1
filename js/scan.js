@@ -380,6 +380,24 @@
     await w.write(text); await w.close();
   }
 
+  // Liga o hook do Activity no .claude/settings.json do projeto, sem apagar o que já existe (mescla por comando).
+  const HOOK_CMD = (kind) => 'node "$CLAUDE_PROJECT_DIR/.aes/activity-hook.mjs" ' + kind;
+  const HOOKS = [["SessionStart", ""], ["PostToolUse", "Edit|Write|MultiEdit|Bash"], ["Stop", ""]];
+  async function mergeActivityHooks(root) {
+    let cfg = {};
+    try {
+      const d = await root.getDirectoryHandle(".claude"); const f = await (await d.getFileHandle("settings.json")).getFile();
+      cfg = JSON.parse((await f.text()) || "{}");
+    } catch (e) { if (e instanceof SyntaxError) throw new Error(".claude/settings.json inválido (JSON); corrija antes de instalar o hook"); }
+    cfg.hooks = cfg.hooks || {};
+    for (const [event, matcher] of HOOKS) {
+      const cmd = HOOK_CMD(event), list = (cfg.hooks[event] = cfg.hooks[event] || []);
+      if (list.some((g) => (g.hooks || []).some((h) => h.command === cmd))) continue;
+      list.push(matcher ? { matcher, hooks: [{ type: "command", command: cmd }] } : { hooks: [{ type: "command", command: cmd }] });
+    }
+    await writeFile(root, ".claude/settings.json", JSON.stringify(cfg, null, 2) + "\n");
+  }
+
   async function installSkills() {
     skillsError.hidden = true;
     const handle = await getHandle();
@@ -393,9 +411,11 @@
       const n = new Set(Object.keys(bundle.skills).map((k) => k.split("/")[2])).size;
       const na = Object.keys(bundle.agents || {}).length;
       for (const [path, text] of Object.entries(all)) await writeFile(handle, path, text);
+      for (const [path, text] of Object.entries(bundle.files || {})) await writeFile(handle, path, text);
+      if (bundle.files && bundle.files[".aes/activity-hook.mjs"]) await mergeActivityHooks(handle);
       installBtn.textContent = "Instalado!";
       allLabel.textContent = n + " skills e " + na + " agente(s) instalados!";
-      if (window.Activity) Activity.log("skills.installed", { summary: Object.keys(all).length + " arquivos em .claude/skills e .claude/agents" });
+      if (window.Activity) Activity.log("skills.installed", { summary: Object.keys(all).length + " arquivos em .claude/skills e .claude/agents, hook do Activity em .claude/settings.json" });
     } catch (err) {
       skillsError.textContent = "Não foi possível baixar as skills: " + err.message;
       skillsError.hidden = false;

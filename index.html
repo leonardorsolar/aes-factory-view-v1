@@ -97,7 +97,7 @@
               <div class="user__handle" data-user-handle>@leonardorsolar</div>
             </div>
           </div>
-          <button class="nav__item" type="button" data-skills-install-all title="Copia as skills (.claude/skills) e os agentes (.claude/agents) para o projeto selecionado">
+          <button class="nav__item" type="button" data-skills-install-all title="Copia as skills (.claude/skills), os agentes (.claude/agents) e liga o hook do Activity em .claude/settings.json do projeto selecionado">
             <svg class="icon" width="16" height="16"><use href="#i-download" /></svg>
             <span>Baixar skills e agentes</span>
           </button>
@@ -215,7 +215,7 @@
           <div class="pipe-panel" data-pipe-panel="construction">
             <div class="cy" data-cycles></div>
           </div>
-          <div class="pipe-panel" data-pipe-panel="pipeline" hidden></div>
+          <div class="pipe-panel" data-pipe-panel="pipeline" hidden><div data-pipeline-view></div></div>
         </section>
 
         <section class="page page--activity" data-page="/activity" data-title="Activity" hidden>
@@ -316,5 +316,6 @@
     <script src="js/cycle-md.js"></script>
     <script src="js/cycle-json.js"></script>
     <script src="js/cycles.js"></script>
+    <script src="js/pipeline.js"></script>
   </body>
 </html>

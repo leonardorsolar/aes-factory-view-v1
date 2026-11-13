@@ -20,7 +20,9 @@ const pack = (srcDir, destPrefix) =>
 const bundle = {
   skills: pack("template/skills", ".claude/skills"),
   agents: pack("template/agents", ".claude/agents"),
+  // hook do feed Activity: vai para .aes/ do projeto e é ligado em .claude/settings.json na instalação
+  files: { ".aes/activity-hook.mjs": readFileSync(join(root, "scripts", "activity-hook.mjs"), "utf8") },
 };
 writeFileSync(join(root, "js", "skills-bundle.js"),
   "// GERADO por scripts/build-skills-bundle.mjs — não edite à mão.\nwindow.SCAN_BUNDLE = " + JSON.stringify(bundle) + ";\n");
-console.log("skills:", Object.keys(bundle.skills).length, "agents:", Object.keys(bundle.agents).length);
+console.log("skills:", Object.keys(bundle.skills).length, "agents:", Object.keys(bundle.agents).length, "files:", Object.keys(bundle.files).length);

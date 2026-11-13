@@ -2,6 +2,78 @@
   "version": 1,
   "events": [
     {
+      "id": "413ac54b-8758-44db-9fd7-d5c4273111e5",
+      "kind": "deed",
+      "action": "claude.responded",
+      "title": "",
+      "actor": "Claude",
+      "timestamp": "2026-11-13T13:56:32.799Z",
+      "summary": "O botão **Baixar skills e agentes** agora também instala o hook do Activity no projeto selecionado. Só rodei a checagem de sintaxe e o rebu…"
+    },
+    {
+      "id": "dce6807a-e846-41e3-8560-f9e2be197824",
+      "kind": "deed",
+      "action": "claude.responded",
+      "title": "",
+      "actor": "Claude",
+      "timestamp": "2026-11-13T13:55:07.719Z",
+      "summary": "Esse projeto só mostra no Activity o que você faz na página. Isso aparece no `.aes/activity.json` dele, que tem notas, ciclos, onboarding e…"
+    },
+    {
+      "id": "7b17a64e-52a4-4d17-8b0f-047b806ddf61",
+      "kind": "deed",
+      "action": "claude.responded",
+      "title": "",
+      "actor": "Claude",
+      "timestamp": "2026-11-13T13:53:13.874Z",
+      "summary": "O modal de cada etapa agora tem a seção \"Comandos de uso\", com um botão **Copiar** em cada comando. Só conferi a sintaxe do script; não abr…"
+    },
+    {
+      "id": "5932a0f5-0757-4a18-816a-ee28ecbb842f",
+      "kind": "deed",
+      "action": "claude.responded",
+      "title": "",
+      "actor": "Claude",
+      "timestamp": "2026-11-13T13:43:46.810Z",
+      "summary": "O desenho da pipeline agora espelha os ciclos da pasta do projeto conectado, lendo `.claude/cycles/*.json`. No seu exemplo, `novo-ciclo.jso…"
+    },
+    {
+      "id": "6aa672c3-8267-4c97-ad1d-eeb5f7cf6ff3",
+      "kind": "deed",
+      "action": "claude.responded",
+      "title": "",
+      "actor": "Claude",
+      "timestamp": "2026-11-13T13:40:01.184Z",
+      "summary": "Vou fazer o desenho ler os arquivos `.claude/cycles/*.json` da pasta do projeto conectado. Se não houver pasta, ele usa o `fabrica-v3.json`."
+    },
+    {
+      "id": "595be6d2-6a68-4637-beae-b8d2cf3e1783",
+      "kind": "deed",
+      "action": "claude.responded",
+      "title": "",
+      "actor": "Claude",
+      "timestamp": "2026-11-13T13:32:19.514Z",
+      "summary": "Acrescentei as três coisas na aba Pipeline. O script passou na checagem de sintaxe, mas não abri a página no navegador, então o visual não …"
+    },
+    {
+      "id": "5d00f871-9189-4e76-a84d-fa5174cab780",
+      "kind": "deed",
+      "action": "claude.responded",
+      "title": "",
+      "actor": "Claude",
+      "timestamp": "2026-11-13T13:31:20.619Z",
+      "summary": "Vou desenhar as setas e o arco do laço numa camada SVG sobre a grade, e abrir o resumo da etapa num diálogo ao clicar na caixa."
+    },
+    {
+      "id": "48036d07-f790-4e30-8045-59e47c6d0e5f",
+      "kind": "deed",
+      "action": "claude.responded",
+      "title": "",
+      "actor": "Claude",
+      "timestamp": "2026-11-13T13:27:57.955Z",
+      "summary": "Estou montando o desenho da pipeline como um módulo novo, porque este projeto não tem o seletor de pipeline do outro. Ele lê o ciclo de `cy…"
+    },
+    {
       "id": "28399395-2428-4bc7-907a-017c0d1adf11",
       "kind": "deed",
       "action": "claude.responded",
