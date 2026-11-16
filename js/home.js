@@ -92,8 +92,9 @@
       const h = await window.showDirectoryPicker({ id: "aes-home", mode: "readwrite" });
       handle = h; info = await inspect(h);
       const prev = readHome();
-      const path = prev && prev.name === h.name ? prev.path : "";
-      writeHome({ name: h.name, path });
+      const paths = Object.assign({}, prev && prev.paths);
+      if (prev && prev.name && prev.path) paths[prev.name] = prev.path;
+      writeHome({ name: h.name, path: paths[h.name] || "", paths });
       await idbPut(HANDLE_KEY, h);
     } catch (e) { if (e.name !== "AbortError") error = e.message; }
     render();
@@ -704,6 +705,26 @@
   // painel da Home: relê ao voltar para a Home e ao voltar para a aba
   window.addEventListener("hashchange", () => { if ((location.hash.replace("#", "") || "/") === "/") refreshPanel(); });
   window.addEventListener("focus", () => { if ((location.hash.replace("#", "") || "/") === "/") refreshPanel(); });
+
+  // Trocar de projeto no seletor da sidebar troca a pasta central: o painel deixa de mostrar
+  // os apps/ciclos da pasta anterior e passa a ler a nova (vazia se ela não tiver apps.json).
+  window.addEventListener("aes:project-changed", async (e) => {
+    const next = e.detail && e.detail.handle;
+    if (!handle) handle = await idbGet(HANDLE_KEY);
+    if (next && handle) { try { if (await next.isSameEntry(handle)) return; } catch (x) {} } // Project.set da própria pasta central
+    const prev = readHome();
+    const paths = Object.assign({}, prev && prev.paths);
+    if (prev && prev.name && prev.path) paths[prev.name] = prev.path; // lembra o caminho ao voltar para a pasta
+    handle = next || null; info = null; data = null; panelMsg = ""; granted = false;
+    if (next) {
+      writeHome({ name: next.name, path: paths[next.name] || "", paths, apps: [], cycles: [] });
+      await idbPut(HANDLE_KEY, next);
+    } else {
+      try { localStorage.removeItem(HOME_KEY); } catch (x) {}
+      try { const d = await idb(); d.transaction("handles", "readwrite").objectStore("handles").delete(HANDLE_KEY); } catch (x) {}
+    }
+    renderSettings();
+  });
   renderSettings();
 
   window.HomeSetup = { open, install, current: readHome, handle: async () => handle || (handle = await idbGet(HANDLE_KEY)) };
