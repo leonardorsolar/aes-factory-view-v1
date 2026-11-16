@@ -185,18 +185,12 @@
     const head = header("i-check", "Tudo pronto!", "Você concluiu as configurações básicas.");
     const body = el("div", "ob__body ob__body--center");
     body.append(el("div", "ob__done",
-      "<strong>Sua fábrica está quase pronta para começar.</strong>" +
-      "<p>Selecione a pasta do seu projeto, conecte sua conta do GitHub, baixe as skills e agentes no menu lateral e comece a criar tarefas. " +
+      "<strong>Sua fábrica está pronta para começar.</strong>" +
+      "<p>A pasta central já tem os agentes e as skills. Conecte sua conta do GitHub em Preferences, marque uma issue com o rótulo <code>factory</code> e abra o Claude Code na pasta central. " +
       "Você pode rever estas instruções quando quiser.</p>"));
     const foot = el("div", "ob__foot");
     foot.append(
       button("Voltar", "ob__btn", () => go(index - 1)),
-      button("Baixar skills e agentes", "ob__btn", () => {
-        // reaproveita o botão da sidebar (js/scan.js); o clique do usuário mantém a permissão de escrita
-        const b = document.querySelector("[data-skills-install-all]");
-        if (b && !b.disabled) b.click();
-        else alert("Selecione a pasta do projeto primeiro.");
-      }),
       button("Fechar", "ob__btn ob__btn--primary", () => close(true)));
     return [head, body, foot];
   }
@@ -223,6 +217,14 @@
   }
 
   // remember = true grava que o onboarding já foi visto (não abre mais sozinho)
+  // 1º acesso: a pasta central (js/home.js) vem primeiro; ao fechá-la, estas boas-vindas
+  let afterHome = false;
+  let shownThisSession = false;
+  window.addEventListener("aes:home-closed", () => {
+    if (!afterHome) return;
+    afterHome = false;
+    if (!isSeen() && !shownThisSession) open();
+  });
   function close(remember) {
     if (remember) { markSeen(); if (window.Activity) Activity.log("onboarding.finished"); }
     root.hidden = true;
@@ -231,6 +233,7 @@
   function onKey(e) { if (e.key === "Escape") close(index >= LAST); }
 
   function open() {
+    shownThisSession = true;
     index = -1;
     root.hidden = false;
     document.addEventListener("keydown", onKey);
@@ -248,10 +251,27 @@
   document.body.append(root);
 
   window.openOnboarding = open; // reabrir manualmente (ex.: pelo console)
+  document.querySelectorAll("[data-onboarding-open]").forEach((b) => b.addEventListener("click", () => open()));
+
+  // Menus suspensos (Home → Configurações): abre/fecha, fecha ao escolher, ao clicar fora e com Esc
+  document.querySelectorAll("[data-menu]").forEach((menu) => {
+    const toggle = menu.querySelector("[data-menu-toggle]");
+    const list = menu.querySelector(".menu__list");
+    const setOpen = (v) => { list.hidden = !v; toggle.setAttribute("aria-expanded", String(v)); };
+    toggle.addEventListener("click", () => setOpen(list.hidden));
+    list.addEventListener("click", (e) => { if (e.target.closest(".menu__item")) setOpen(false); });
+    document.addEventListener("click", (e) => { if (!menu.contains(e.target)) setOpen(false); });
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !list.hidden) { setOpen(false); toggle.focus(); } });
+  });
 
   // Decide se abre sozinho para o projeto atual.
   async function check(handle) {
     status = null;
+    // sem pasta central (1º acesso): ela vem primeiro; ao fechá-la, estas boas-vindas
+    if (window.HomeSetup && !HomeSetup.current()) {
+      if (!("showDirectoryPicker" in window)) return;
+      afterHome = true; HomeSetup.open(); return;
+    }
     if (!projectName()) { if (!isSeen()) open(); return; } // sem projeto: 1º acesso, como antes
     if (isSeen()) return;
     try {
@@ -283,6 +303,7 @@
   window.addEventListener("aes:project-changed", (e) => {
     const d = e.detail || {};
     if (!d.project) return;
+    if (shownThisSession) return; // já viu as boas-vindas nesta sessão (ex.: acabou de concluir a pasta central)
     if (!root.hidden) { root.hidden = true; document.removeEventListener("keydown", onKey); }
     check(d.handle);
   });

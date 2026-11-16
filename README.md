@@ -27,7 +27,7 @@ Claude Code ──hook──► scripts/activity-hook.mjs ──► .aes/activit
 ```
 
 Os hooks estão em `.claude/settings.json` (precisa de Node). A página relê `.aes/activity.json` a cada 4 s.
-O botão **Baixar skills e agentes** instala o hook em qualquer projeto (`.aes/activity-hook.mjs` + hooks mesclados no `.claude/settings.json`).
+O botão **Baixar skills e agentes** (e "Preparar pasta central" em **Configurações da Factory**) instala agentes, skills, hooks e o hook do Activity **na pasta central**, nunca nos apps (`.claude/`, `.aes/activity-hook.mjs` e hooks mesclados no `.claude/settings.json`). O pacote vem de `template/` (`node scripts/build-skills-bundle.mjs`).
 
 ### Cards em Pipeline → Tarefas
 A aba Pipeline mostra o desenho do ciclo do projeto (`.claude/cycles/*.json`) e, abaixo, um card por issue, na coluna da fase em que ela está:

@@ -1,0 +1,354 @@
+{
+  "format": "aes-cycle",
+  "version": 1,
+  "cycle": {
+    "id": "novo_ciclo",
+    "label": "Ciclo: novo-ciclo",
+    "description": "",
+    "approval": "stop_at_pr",
+    "default_profile": "novo_ciclo"
+  },
+  "phases": [
+    {
+      "id": "fase_discovery",
+      "label": "Fase: Discovery",
+      "column": "In Progress"
+    },
+    {
+      "id": "design",
+      "label": "Design",
+      "column": "In Progress"
+    },
+    {
+      "id": "build",
+      "label": "Build",
+      "column": "In Progress"
+    },
+    {
+      "id": "verify",
+      "label": "Verify",
+      "column": "In Review"
+    },
+    {
+      "id": "deliver",
+      "label": "Deliver",
+      "column": "In Review"
+    }
+  ],
+  "approval_modes": {
+    "stop_at_pr": {
+      "label": "Para no PR",
+      "pause_after": [
+        "pr"
+      ]
+    }
+  },
+  "steps": {
+    "intake": {
+      "phase": "fase_discovery",
+      "label": "Intake",
+      "run": {
+        "agent": "intake"
+      },
+      "reads": [
+        "issue.md"
+      ],
+      "writes": "intake.md",
+      "next": {
+        "ACCEPT": "@next",
+        "NEEDS-INFO": "@wait-author",
+        "REJECT": "@rejected"
+      }
+    },
+    "prd": {
+      "phase": "fase_discovery",
+      "label": "PRD",
+      "run": {
+        "agent": "prd (skill aes-create-prd)"
+      },
+      "reads": [
+        "issue.md",
+        "intake.md"
+      ],
+      "writes": "prd.md",
+      "next": {
+        "DONE": "@next",
+        "BLOCKED": "@human"
+      }
+    },
+    "techspec": {
+      "phase": "design",
+      "label": "Techspec",
+      "run": {
+        "agent": "doc-writer-techspec (skill aes-create-techspec)"
+      },
+      "reads": [
+        "issue.md",
+        "intake.md",
+        "prd.md"
+      ],
+      "writes": "techspec.md",
+      "next": {
+        "DONE": "@next",
+        "BLOCKED": "@human"
+      }
+    },
+    "tasks": {
+      "phase": "design",
+      "label": "Tasks",
+      "run": {
+        "agent": "doc-writer-tasks (skill aes-create-tasks)"
+      },
+      "reads": [
+        "issue.md",
+        "intake.md",
+        "prd.md",
+        "techspec.md"
+      ],
+      "writes": "tasks.md",
+      "next": {
+        "DONE": "@next",
+        "BLOCKED": "@human"
+      },
+      "needs": [
+        "techspec"
+      ]
+    },
+    "execute-task": {
+      "phase": "build",
+      "label": "Execute Task",
+      "run": {
+        "agent": "execute-task (skill aes-execute-task)"
+      },
+      "reads": [
+        "issue.md",
+        "intake.md",
+        "prd.md",
+        "techspec.md",
+        "tasks.md"
+      ],
+      "writes": "execute-task.md",
+      "next": {
+        "DONE": "@next",
+        "BLOCKED": "@human"
+      },
+      "needs": [
+        "tasks"
+      ]
+    },
+    "gate": {
+      "phase": "verify",
+      "label": "Gate",
+      "run": {
+        "agent": "gate (skill aes-run-gate)"
+      },
+      "reads": [
+        "execute-task.md"
+      ],
+      "writes": "gate.md",
+      "next": {
+        "PASS": "@next",
+        "SKIPPED": "@next",
+        "FAIL": "execute-task"
+      },
+      "needs": [
+        "execute-task"
+      ]
+    },
+    "review-code": {
+      "phase": "verify",
+      "label": "Review Code",
+      "group": "review",
+      "run": {
+        "agent": "reviewer-code"
+      },
+      "reads": [
+        "issue.md",
+        "prd.md",
+        "techspec.md",
+        "tasks.md",
+        "execute-task.md",
+        "gate.md"
+      ],
+      "writes": "review-code.md",
+      "next": {
+        "PASS": "@next",
+        "CHANGES": "execute-task"
+      },
+      "needs": [
+        "gate"
+      ]
+    },
+    "review-security": {
+      "phase": "verify",
+      "label": "Review Security",
+      "group": "review",
+      "run": {
+        "agent": "reviewer-security"
+      },
+      "reads": [
+        "issue.md",
+        "prd.md",
+        "techspec.md",
+        "tasks.md",
+        "execute-task.md",
+        "gate.md"
+      ],
+      "writes": "review-security.md",
+      "next": {
+        "PASS": "@next",
+        "CHANGES": "execute-task"
+      },
+      "needs": [
+        "gate"
+      ]
+    },
+    "review-ui": {
+      "phase": "verify",
+      "label": "Review UI",
+      "group": "review",
+      "run": {
+        "agent": "reviewer-ui"
+      },
+      "reads": [
+        "issue.md",
+        "prd.md",
+        "techspec.md",
+        "tasks.md",
+        "execute-task.md",
+        "gate.md"
+      ],
+      "writes": "review-ui.md",
+      "next": {
+        "PASS": "@next",
+        "CHANGES": "execute-task"
+      },
+      "needs": [
+        "gate"
+      ]
+    },
+    "review-ux": {
+      "phase": "verify",
+      "label": "Review UX",
+      "group": "review",
+      "run": {
+        "agent": "reviewer-ux"
+      },
+      "reads": [
+        "issue.md",
+        "prd.md",
+        "techspec.md",
+        "tasks.md",
+        "execute-task.md",
+        "gate.md"
+      ],
+      "writes": "review-ux.md",
+      "next": {
+        "PASS": "@next",
+        "CHANGES": "execute-task"
+      },
+      "needs": [
+        "gate"
+      ]
+    },
+    "pr": {
+      "phase": "deliver",
+      "label": "PR",
+      "run": {
+        "agent": "pr"
+      },
+      "reads": [
+        "issue.md",
+        "prd.md",
+        "techspec.md",
+        "tasks.md",
+        "execute-task.md",
+        "gate.md",
+        "review-code.md",
+        "review-security.md",
+        "review-ui.md",
+        "review-ux.md"
+      ],
+      "writes": "pr.md",
+      "next": {
+        "PASS": "@next",
+        "FAIL": "@human"
+      },
+      "needs": [
+        "review-code",
+        "review-security",
+        "review-ui",
+        "review-ux"
+      ]
+    },
+    "approve": {
+      "phase": "deliver",
+      "label": "Approve",
+      "run": {
+        "agent": "approver"
+      },
+      "reads": [
+        "issue.md",
+        "prd.md",
+        "techspec.md",
+        "tasks.md",
+        "execute-task.md",
+        "gate.md",
+        "review-code.md",
+        "review-security.md",
+        "review-ui.md",
+        "review-ux.md",
+        "pr.md"
+      ],
+      "writes": "decision.md",
+      "next": {
+        "APPROVE": "@next",
+        "ESCALATE": "@human"
+      },
+      "needs": [
+        "pr"
+      ]
+    },
+    "merge": {
+      "phase": "deliver",
+      "label": "Merge",
+      "run": {
+        "agent": "merge"
+      },
+      "reads": [
+        "pr.md",
+        "gate.md",
+        "decision.md"
+      ],
+      "writes": "merge.md",
+      "next": {
+        "MERGED": "@next",
+        "FAIL": "@human"
+      },
+      "confirm": true,
+      "needs": [
+        "approve"
+      ]
+    }
+  },
+  "profiles": {
+    "novo_ciclo": {
+      "label": "Ciclo: novo-ciclo",
+      "steps": [
+        "intake",
+        "prd",
+        "techspec",
+        "tasks",
+        "execute-task",
+        "gate",
+        "review-code",
+        "review-security",
+        "review-ui",
+        "review-ux",
+        "pr",
+        "approve",
+        "merge"
+      ]
+    }
+  }
+}

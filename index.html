@@ -97,7 +97,7 @@
               <div class="user__handle" data-user-handle>@leonardorsolar</div>
             </div>
           </div>
-          <button class="nav__item" type="button" data-skills-install-all title="Copia as skills (.claude/skills), os agentes (.claude/agents) e liga o hook do Activity em .claude/settings.json do projeto selecionado">
+          <button class="nav__item" type="button" data-skills-install-all title="Instala agentes, skills e hooks em .claude/ da PASTA CENTRAL (nunca nos apps)">
             <svg class="icon" width="16" height="16"><use href="#i-download" /></svg>
             <span>Baixar skills e agentes</span>
           </button>
@@ -110,6 +110,23 @@
           <h1 class="page__title">Home</h1>
           <p class="page__subtitle">Visão geral do projeto.</p>
           <div class="home-actions">
+            <div class="menu" data-menu>
+              <button class="btn btn--icon" type="button" aria-haspopup="menu" aria-expanded="false" data-menu-toggle>
+                <svg class="icon" width="14" height="14"><use href="#i-settings" /></svg>
+                Configurações
+                <svg class="icon" width="12" height="12"><use href="#i-chevron" /></svg>
+              </button>
+              <div class="menu__list" role="menu" hidden>
+                <button class="menu__item" type="button" role="menuitem" data-home-open>
+                  <strong>Configurações da Factory</strong>
+                  <span>Pasta central, aplicativos e comando do Claude Code</span>
+                </button>
+                <button class="menu__item" type="button" role="menuitem" data-onboarding-open>
+                  <strong>Configurações iniciais do app</strong>
+                  <span>Git, .gitignore, GitHub CLI e publicar no GitHub</span>
+                </button>
+              </div>
+            </div>
             <a class="btn btn--icon" href="#/project" data-link-nav>
               <svg class="icon" width="14" height="14"><use href="#i-file" /></svg>
               Scan the codebase
@@ -123,6 +140,8 @@
               Notas
             </a>
           </div>
+          <!-- Pasta central, apps e ciclo de cada app (js/home.js) -->
+          <div class="fp" data-factory-panel></div>
         </section>
 
         <!-- ===== Scan the codebase ===== -->
@@ -284,6 +303,19 @@
             </div>
           </form>
 
+          <h2 class="section-title">Pasta central</h2>
+          <p class="page__subtitle">Guarda agentes, skills, <code>apps.json</code> e os trabalhos de cada app. Os apps ficam só com código.</p>
+
+          <div class="setting" data-home-settings>
+            <div>
+              <div class="setting__name" data-home-name>Nenhuma pasta central</div>
+              <div class="setting__desc" data-home-info></div>
+            </div>
+            <div class="gh-actions">
+              <button class="btn" data-home-open>Escolher pasta central</button>
+            </div>
+          </div>
+
           <h2 class="section-title">Select your project</h2>
           <p class="page__subtitle">Factory: choose the folder of the project you want to work on.</p>
 
@@ -307,6 +339,7 @@
     <script src="js/router.js"></script>
     <script src="js/github.js"></script>
     <script src="js/project.js"></script>
+    <script src="js/home.js"></script>
     <script src="js/onboarding.js"></script>
     <script src="js/devmentor-prompts.js"></script>
     <script src="js/skills-bundle.js"></script>

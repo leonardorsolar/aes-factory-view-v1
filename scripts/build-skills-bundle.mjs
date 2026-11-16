@@ -1,5 +1,8 @@
-// Empacota template/skills e template/agents em js/skills-bundle.js:
-// o navegador não lê pastas do repo quando a página abre por file://.
+// Empacota template/ em js/skills-bundle.js: o navegador não lê pastas do repo quando a página abre por file://.
+// Tudo é instalado na PASTA CENTRAL (js/home.js), nunca nos apps.
+//   managed  → sempre sobrescrito (agentes, skills, hooks, hook do Activity): é a Factory que mantém
+//   seed     → só criado se faltar (memória, ciclos, contexto): o usuário e os agentes editam
+//   claudeMd → trecho do CLAUDE.md entre marcadores (o resto do arquivo é preservado)
 // Uso: node scripts/build-skills-bundle.mjs   (rode de novo depois de editar template/)
 import { readdirSync, readFileSync, writeFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
@@ -16,13 +19,21 @@ const pack = (srcDir, destPrefix) =>
     destPrefix + "/" + relative(join(root, srcDir), p).split("\\").join("/"),
     readFileSync(p, "utf8"),
   ]));
+const read = (p) => readFileSync(join(root, p), "utf8");
 
 const bundle = {
   skills: pack("template/skills", ".claude/skills"),
   agents: pack("template/agents", ".claude/agents"),
-  // hook do feed Activity: vai para .aes/ do projeto e é ligado em .claude/settings.json na instalação
-  files: { ".aes/activity-hook.mjs": readFileSync(join(root, "scripts", "activity-hook.mjs"), "utf8") },
+  hooks: pack("template/hooks", ".claude/hooks"),
+  files: { ".aes/activity-hook.mjs": read("scripts/activity-hook.mjs") },
+  seed: {
+    ...pack("template/memory", ".claude/memory"),
+    ...pack("template/cycles", ".claude/cycles"),
+    "contexto/contexto.md": read("template/contexto.md"),
+  },
+  claudeMd: read("template/CLAUDE.md"),
 };
 writeFileSync(join(root, "js", "skills-bundle.js"),
   "// GERADO por scripts/build-skills-bundle.mjs — não edite à mão.\nwindow.SCAN_BUNDLE = " + JSON.stringify(bundle) + ";\n");
-console.log("skills:", Object.keys(bundle.skills).length, "agents:", Object.keys(bundle.agents).length, "files:", Object.keys(bundle.files).length);
+const n = (o) => Object.keys(o).length;
+console.log("skills:", n(bundle.skills), "agents:", n(bundle.agents), "hooks:", n(bundle.hooks), "files:", n(bundle.files), "seed:", n(bundle.seed));

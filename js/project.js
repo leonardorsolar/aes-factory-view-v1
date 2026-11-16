@@ -93,5 +93,15 @@
     showError("Your browser does not support folder selection. Use Chrome or Edge.");
   }
 
+  // Usado pela pasta central (js/home.js): ela vira a pasta de trabalho das outras telas.
+  window.Project = {
+    async set(handle, info) {
+      const project = { name: handle.name, info: info || (await describe(handle)) };
+      write(project); await saveHandle(handle); showProject(project); showError("");
+      if (window.Activity) Activity.log("project.selected", { title: project.name, summary: project.info });
+      window.dispatchEvent(new CustomEvent("aes:project-changed", { detail: { project, handle } }));
+    },
+  };
+
   showProject(read());
 })();

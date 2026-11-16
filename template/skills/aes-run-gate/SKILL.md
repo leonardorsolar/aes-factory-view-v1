@@ -9,7 +9,8 @@ Verificação objetiva, determinística e somente leitura do que o `execute-task
 
 ## Regras
 - Sem perguntas, sem modo watch, sem `--fix`, sem editar código.
-- Só grave `trabalhos/<repo>-issue-<n>/gate.md`.
+- Só grave `apps/<app>/trabalhos/issue-<n>/gate.md`.
+- As checagens rodam no código do app, em `<path>` (ex.: `npm --prefix "<path>" test`, `cd "<path>" && pytest -q`).
 
 ## Passos
 1. **Detectar** as checagens, nesta ordem:

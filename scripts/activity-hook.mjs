@@ -35,6 +35,18 @@ function lastAssistantText(transcriptPath) {
   return undefined;
 }
 
+// "issue 1" vence "#2" (o prompt do merge cita o PR #2); "#N" sozinho só se não houver "issue N"
+function issueOf(text) {
+  const m = text.match(/\bissue\s*#?\s*(\d+)/i) || text.match(/#(\d+)/);
+  return m ? Number(m[1]) : 0;
+}
+function stepStarted(agent, text, summary) {
+  const issue = issueOf(text);
+  if (!issue) return null;
+  const app = (text.match(/\bapp=([\w.-]+)/) || [])[1]; // pasta central: "app=<app>"
+  return { action: "factory.step_started", title: (app ? app + " " : "") + "#" + issue + " · @" + agent, summary, extra: app ? { agent, issue, app } : { agent, issue } };
+}
+
 function buildEvent(kind, input, root) {
   if (kind === "SessionStart") {
     return { action: "claude.session_started", title: input.source || "", summary: undefined };
@@ -42,10 +54,22 @@ function buildEvent(kind, input, root) {
   if (kind === "UserPromptSubmit") {
     // "@intake triar a issue 3": marca a etapa como rodando antes de qualquer arquivo existir
     const prompt = String(input.prompt || "");
-    const agent = (prompt.match(/(?:^|\s)@([\w-]+)/) || [])[1];
-    const issue = (prompt.match(/(?:issue\s*#?\s*|#)(\d+)/i) || [])[1];
-    if (!agent || !issue) return null;
-    return { action: "factory.step_started", title: "#" + issue + " · @" + agent, summary: shorten(prompt), extra: { agent, issue: Number(issue) } };
+    // relatório de subagente devolvido à sessão também chega como "prompt": não é pedido do usuário
+    if (/^\s*<agent-message\b|\[Subagent hand-back\]/.test(prompt)) return null;
+    // só conta pedido que COMEÇA com @agente, e o agente precisa existir em .claude/agents/
+    const agent = (prompt.match(/^\s*@([\w-]+)/) || [])[1];
+    if (agent && !existsSync(join(root, ".claude", "agents", agent + ".md"))) return null;
+    if (!agent) return null;
+    return stepStarted(agent, prompt, shorten(prompt));
+  }
+  if (kind === "PreToolUse") {
+    // a sessão iniciou um subagente sozinha (ex.: depois de "pode fazer"): também é início de etapa
+    const tool = input.tool_name, ti = input.tool_input || {};
+    if (tool !== "Agent" && tool !== "Task") return null;
+    const agent = String(ti.subagent_type || "");
+    if (!agent || !existsSync(join(root, ".claude", "agents", agent + ".md"))) return null;
+    const text = String(ti.prompt || "") + "\n" + String(ti.description || "");
+    return stepStarted(agent, text, "(iniciado pela sessão) " + shorten(ti.description || ti.prompt));
   }
   if (kind === "SubagentStop") {
     const agent = input.agent_type;
@@ -62,8 +86,12 @@ function buildEvent(kind, input, root) {
       if (!file) return null;
       const rel = isAbsolute(file) ? relative(root, file) : file;
       if (rel.startsWith("..") || rel.startsWith(".aes/activity.json")) return null; // fora do projeto ou o próprio feed
-      const w = rel.replace(/\\/g, "/").match(/^trabalhos\/(.+)-issue-(\d+)\/([^/]+\.md)$/); // saída de uma etapa: liga o evento à tarefa
-      return { action: tool === "Write" ? "claude.file_written" : "claude.file_edited", title: rel, summary: undefined, extra: w ? { repo: w[1], issue: Number(w[2]), file: w[3] } : undefined };
+      // saída de uma etapa: liga o evento à tarefa (pasta central: apps/<app>/trabalhos/issue-N/; antigo: trabalhos/<repo>-issue-N/)
+      const p = rel.replace(/\\/g, "/");
+      const a = p.match(/^apps\/([^/]+)\/trabalhos\/issue-(\d+)\/([^/]+\.md)$/);
+      const w = p.match(/^trabalhos\/(.+)-issue-(\d+)\/([^/]+\.md)$/);
+      const extra = a ? { app: a[1], repo: a[1], issue: Number(a[2]), file: a[3] } : w ? { repo: w[1], issue: Number(w[2]), file: w[3] } : undefined;
+      return { action: tool === "Write" ? "claude.file_written" : "claude.file_edited", title: rel, summary: undefined, extra };
     }
     if (tool === "Bash" && /\bgit\s+commit\b/.test(String(ti.command || ""))) {
       let subject = "";

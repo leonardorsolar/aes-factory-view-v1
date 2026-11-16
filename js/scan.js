@@ -359,20 +359,6 @@
     return r.filter(Boolean).length;
   }
 
-  async function refreshSkillsStatus() {
-    const handle = await getHandle();
-    installBtn.disabled = installAllBtn.disabled = !handle;
-    if (!handle) { skillsStatus.textContent = "Selecione um projeto para baixar as skills."; return; }
-    if ((await handle.queryPermission({ mode: "read" })) !== "granted") {
-      skillsStatus.textContent = "A skill aes-init será copiada para .claude/skills/ do projeto.";
-      return;
-    }
-    const n = await skillsInstalled(handle);
-    skillsStatus.textContent = n === 1
-      ? "Skill aes-init instalada. Clique para reinstalar/atualizar."
-      : "Skill aes-init não instalada. Clique em Baixar skill.";
-  }
-
   async function writeFile(root, path, text) {
     let d = root; const parts = path.split("/");
     for (const part of parts.slice(0, -1)) d = await d.getDirectoryHandle(part, { create: true });
@@ -380,52 +366,40 @@
     await w.write(text); await w.close();
   }
 
-  // Liga o hook do Activity no .claude/settings.json do projeto, sem apagar o que já existe (mescla por comando).
-  const HOOK_CMD = (kind) => 'node "$CLAUDE_PROJECT_DIR/.aes/activity-hook.mjs" ' + kind;
-  const HOOKS = [["SessionStart", ""], ["UserPromptSubmit", ""], ["PostToolUse", "Edit|Write|MultiEdit|Bash"], ["SubagentStop", ""], ["Stop", ""]];
-  async function mergeActivityHooks(root) {
-    let cfg = {};
-    try {
-      const d = await root.getDirectoryHandle(".claude"); const f = await (await d.getFileHandle("settings.json")).getFile();
-      cfg = JSON.parse((await f.text()) || "{}");
-    } catch (e) { if (e instanceof SyntaxError) throw new Error(".claude/settings.json inválido (JSON); corrija antes de instalar o hook"); }
-    cfg.hooks = cfg.hooks || {};
-    for (const [event, matcher] of HOOKS) {
-      const cmd = HOOK_CMD(event), list = (cfg.hooks[event] = cfg.hooks[event] || []);
-      if (list.some((g) => (g.hooks || []).some((h) => h.command === cmd))) continue;
-      list.push(matcher ? { matcher, hooks: [{ type: "command", command: cmd }] } : { hooks: [{ type: "command", command: cmd }] });
+  // Agentes, skills e hooks vão SEMPRE para a pasta central (js/home.js), nunca para a pasta dos apps.
+  async function refreshSkillsStatus() {
+    const handle = window.HomeSetup ? await HomeSetup.handle() : null;
+    installBtn.disabled = installAllBtn.disabled = false;
+    if (!handle) { skillsStatus.textContent = "Escolha a pasta central: as skills e os agentes são instalados nela, não no app."; return; }
+    if ((await handle.queryPermission({ mode: "read" })) !== "granted") {
+      skillsStatus.textContent = "Skills e agentes ficam em .claude/ da pasta central (" + handle.name + ").";
+      return;
     }
-    await writeFile(root, ".claude/settings.json", JSON.stringify(cfg, null, 2) + "\n");
+    const n = await skillsInstalled(handle);
+    skillsStatus.textContent = n === 1
+      ? "Skills e agentes instalados na pasta central (" + handle.name + "). Clique para atualizar."
+      : "Skills e agentes ainda não instalados na pasta central (" + handle.name + ").";
   }
 
   async function installSkills() {
     skillsError.hidden = true;
-    const handle = await getHandle();
-    if (!handle) return;
+    if (!window.HomeSetup) return;
     installBtn.disabled = installAllBtn.disabled = true;
-    installBtn.textContent = allLabel.textContent = "Baixando...";
+    installBtn.textContent = allLabel.textContent = "Instalando...";
     try {
-      // a pasta foi escolhida só para leitura: pede permissão de escrita (precisa de clique do usuário)
-      if ((await handle.requestPermission({ mode: "readwrite" })) !== "granted") throw new Error("permissão de escrita negada");
-      const all = { ...bundle.skills, ...(bundle.agents || {}) };
-      const n = new Set(Object.keys(bundle.skills).map((k) => k.split("/")[2])).size;
-      const na = Object.keys(bundle.agents || {}).length;
-      for (const [path, text] of Object.entries(all)) await writeFile(handle, path, text);
-      for (const [path, text] of Object.entries(bundle.files || {})) await writeFile(handle, path, text);
-      if (bundle.files && bundle.files[".aes/activity-hook.mjs"]) await mergeActivityHooks(handle);
+      const r = await HomeSetup.install();
       installBtn.textContent = "Instalado!";
-      allLabel.textContent = n + " skills e " + na + " agente(s) instalados!";
-      if (window.Activity) Activity.log("skills.installed", { summary: Object.keys(all).length + " arquivos em .claude/skills e .claude/agents, hook do Activity em .claude/settings.json" });
+      allLabel.textContent = r.agents + " agentes e " + r.skills + " skills na pasta central";
     } catch (err) {
-      skillsError.textContent = "Não foi possível baixar as skills: " + err.message;
+      skillsError.textContent = "Não foi possível instalar: " + err.message;
       skillsError.hidden = false;
       installBtn.textContent = "Baixar skill";
-      allLabel.textContent = "Erro ao baixar";
+      allLabel.textContent = "Erro ao instalar";
       installAllBtn.title = installBtn.title = skillsError.textContent;
     }
     setTimeout(() => {
       installBtn.textContent = "Baixar skill"; allLabel.textContent = "Baixar skills e agentes";
-      installBtn.disabled = false; refreshSkillsStatus();
+      installBtn.disabled = installAllBtn.disabled = false; refreshSkillsStatus();
     }, 2500);
   }
 

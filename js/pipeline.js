@@ -5,6 +5,10 @@
   if (!root) return;
   const FALLBACK = "cycles/fabrica-v3.json";
   let selected = ""; // ciclo escolhido (nome do arquivo) quando o projeto tem mais de um
+  // pasta central: apps.json lista os apps; cada app tem o seu ciclo (campo cycle) e as tarefas em apps/<app>/trabalhos/
+  let apps = [];      // [{ id, cycle, github, ... }]
+  let appId = (() => { try { return localStorage.getItem("pipeline-app") || ""; } catch (e) { return ""; } })();
+  const curApp = () => apps.find((a) => a.id === appId) || null;
   const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; };
   const who = (s) => { const r = s.run || {}; return r.agent || r.skill || (r.script ? "script" : "CI"); };
   const mark = (s) => (s.run && s.run.agent ? "◆ " : s.run && s.run.skill ? "⚡ " : "");
@@ -112,6 +116,28 @@
     return out;
   }
 
+  // pedido com o app (pasta central): "@reviewer-code app=<app> revise o código da issue 1"
+  const ASK_APP = {
+    intake: "avalie a issue", prd: "crie o PRD da issue", "doc-writer-techspec": "crie o techspec da issue",
+    "doc-writer-tasks": "crie as tasks da issue", "execute-task": "implemente a issue", gate: "rode o gate da issue",
+    "reviewer-code": "revise o código da issue", "reviewer-security": "revise a segurança da issue",
+    "reviewer-ui": "revise a UI da issue", "reviewer-ux": "revise a UX da issue", pr: "abra o PR da issue",
+    approver: "aprove a issue", merge: "faça o merge da issue",
+  };
+  function appCommandOf(st, appName, issue) {
+    const agentName = st.run && st.run.agent && String(st.run.agent).split(/[\s(]/)[0];
+    if (!agentName) return "";
+    const ask = ASK_APP[agentName] || "execute a etapa " + String(st.label || st.id).toLowerCase() + " da issue";
+    return "@" + agentName + " app=" + appName + " " + ask + " " + issue;
+  }
+  function copyRow(c) {
+    const row = el("div", "pp__cmd"); row.append(el("code", null, c));
+    const b = el("button", "btn pp__copy", "Copiar"); b.type = "button";
+    b.addEventListener("click", async () => { try { await navigator.clipboard.writeText(c); b.textContent = "Copiado"; } catch (e) { b.textContent = "Falhou"; } setTimeout(() => { b.textContent = "Copiar"; }, 1500); });
+    row.append(b);
+    return row;
+  }
+
   // resumo da etapa
   function info(cfg, s, inProfile) {
     const dlg = el("dialog", "pp__dlg");
@@ -135,12 +161,14 @@
     const cmds = commandsOf(s);
     if (cmds.length) {
       body.append(el("div", "pp__ctitle2", "Comandos de uso"));
-      cmds.forEach((c) => {
-        const row = el("div", "pp__cmd"); row.append(el("code", null, c));
-        const b = el("button", "btn pp__copy", "Copiar"); b.type = "button";
-        b.addEventListener("click", async () => { try { await navigator.clipboard.writeText(c); b.textContent = "Copiado"; } catch (e) { b.textContent = "Falhou"; } setTimeout(() => { b.textContent = "Copiar"; }, 1500); });
-        row.append(b); body.append(row);
-      });
+      cmds.forEach((c) => body.append(copyRow(c)));
+    }
+    // pasta central: o mesmo pedido já com o app escolhido no Pipeline e a issue mais recente dele
+    const a = curApp(), appCmd = a ? appCommandOf(s, a.id, lastIssue || 1) : "";
+    if (appCmd) {
+      body.append(el("div", "pp__ctitle2", "Com o app " + a.id + " (pasta central)"));
+      body.append(copyRow(appCmd));
+      body.append(el("p", "pp__hint", lastIssue ? "Issue " + lastIssue + " é a mais recente deste app no Pipeline; troque o número se for outra." : "Troque o 1 pelo número da issue."));
     }
     dlg.append(head, body);
     dlg.addEventListener("click", (e) => { if (e.target === dlg) dlg.close(); });
@@ -157,6 +185,18 @@
 
     const box = el("section", "pp__diagram");
     const src = el("div", "pp__src");
+    if (apps.length) {
+      const sa = el("select", "pp__sel"); sa.setAttribute("aria-label", "App");
+      apps.forEach((a) => { const o = el("option", null, a.id); o.value = a.id; if (a.id === appId) o.selected = true; sa.append(o); });
+      sa.addEventListener("change", () => {
+        appId = sa.value; try { localStorage.setItem("pipeline-app", appId); } catch (e) {}
+        selected = (curApp() || {}).cycle || selected; load();
+      });
+      src.append(el("span", null, "App: "), sa);
+      const a = curApp();
+      if (a && a.cycle && a.cycle !== selected) src.append(el("span", "pp__from", "(o ciclo do app é " + a.cycle + ")"));
+      if (a && !a.cycle) src.append(el("span", "pp__from", "(app sem ciclo: escolha na Home)"));
+    }
     if (list && list.length > 1) {
       const sel = el("select", "pp__sel"); list.forEach((c) => { const o = el("option", null, c.name); o.value = c.name; if (c.name === selected) o.selected = true; sel.append(o); });
       sel.addEventListener("change", () => { selected = sel.value; load(); });
@@ -197,7 +237,7 @@
     const board = el("section", "pp__board");
     board.append(el("h2", "pp__title", "Tarefas"));
     const how = el("p", "pp__hint", "");
-    how.innerHTML = "O card não guarda estado: a cada ~3 s a tela o recalcula. <strong>Por onde passou</strong> vem dos arquivos em <code>trabalhos/&lt;repo&gt;-issue-N/</code> (a 1ª linha de cada um é o veredito, ex.: <code>ACCEPT</code>). <strong>Rodando agora</strong> vem do hook (<code>.aes/activity.json</code>). <strong>Para onde vai</strong> e <strong>a coluna</strong> vêm do ciclo (veredito → próxima etapa, esperar o autor ou encerrar; campo <code>phase</code> da etapa). Se o hook atrasar, os arquivos continuam dizendo o estado correto.";
+    how.innerHTML = "O card não guarda estado: a cada ~3 s a tela o recalcula. <strong>Por onde passou</strong> vem dos arquivos em <code>apps/&lt;app&gt;/trabalhos/issue-N/</code> da pasta central (a 1ª linha de cada um é o veredito, ex.: <code>ACCEPT</code>). <strong>Rodando agora</strong> vem do hook (<code>.aes/activity.json</code>). <strong>Para onde vai</strong> e <strong>a coluna</strong> vêm do ciclo (veredito → próxima etapa, esperar o autor ou encerrar; campo <code>phase</code> da etapa). Se o hook atrasar, os arquivos continuam dizendo o estado correto.";
     const note = el("p", "pp__hint", ""); board.append(how, note);
     const bgrid = el("div", "pp__grid pp__grid--flow"); // mesmas colunas do desenho, para alinhar
     if (grid.style.gridTemplateColumns) bgrid.style.gridTemplateColumns = grid.style.gridTemplateColumns;
@@ -215,7 +255,7 @@
   }
 
   // ---------- tarefas: arquivos em trabalhos/<repo>-issue-<N>/ + eventos do hook (.aes/activity.json) ----------
-  let ctx = null, lastKey = "";
+  let ctx = null, lastKey = "", lastIssue = 0; // lastIssue: issue mais recente do app (comandos do modal da etapa)
   const first = (t) => String(t || "").split("\n")[0].trim();
   const verdictOf = (t) => { const m = first(t).match(/^[A-Z][A-Z _-]*:\s*([A-Z][A-Z-]*)/); return m ? m[1] : ""; };
   async function dirAt(h, parts) { let d = h; for (const p of parts) d = await d.getDirectoryHandle(p); return d; }
@@ -229,7 +269,9 @@
     try { if (h.queryPermission && (await h.queryPermission({ mode: "read" })) !== "granted") return null; } catch (e) { return null; }
     return h;
   }
-  const RUN_MAX_MS = 30 * 60 * 1000; // um "rodando" sem fim registrado vira "travado" depois disso
+  const RUN_MAX_MS = 30 * 60 * 1000; // um "rodando" sem saída nem parada registrada deixa de ser mostrado depois disso
+  const STOP_GRACE_MS = 2 * 60 * 1000; // agente parou sem gravar: espera isto antes de tirar o "rodando"
+  const ago = (ts) => { const m = Math.floor((Date.now() - ts) / 60000); return m < 1 ? "agora" : m + " min"; };
   const agentOf = (st) => String((st.run || {}).agent || "").split(/[\s(]/)[0];
 
   async function scanTasks(h) {
@@ -238,32 +280,49 @@
     const stepOfAgent = {}; order.forEach((id) => { const a = agentOf(cfg.steps[id]); if (a) stepOfAgent[a] = id; });
     const tasks = new Map();
     const get = (n) => { if (!tasks.has(n)) tasks.set(n, { issue: n, repo: "", dir: "", title: "", steps: {}, files: [] }); return tasks.get(n); };
-    try {
-      const d = await dirAt(h, ["trabalhos"]);
-      for await (const e of d.values()) {
-        const m = e.kind === "directory" && e.name.match(/^(.+)-issue-(\d+)$/); if (!m) continue;
-        const t = get(Number(m[2])); t.repo = m[1]; t.dir = "trabalhos/" + e.name;
-        for await (const f of e.values()) if (f.kind === "file" && f.name.endsWith(".md")) t.files.push(f.name);
-        t.files.sort();
-      }
-    } catch (e) { /* sem trabalhos/ ainda */ }
-    for (const ev of events) if (ev.action === "factory.step_started" && ev.issue) get(ev.issue);
+    const app = curApp();
+    const readDir = async (parts, re, repoOf) => {
+      try {
+        const d = await dirAt(h, parts);
+        for await (const e of d.values()) {
+          const m = e.kind === "directory" && e.name.match(re); if (!m) continue;
+          const t = get(Number(m[m.length - 1])); t.repo = repoOf(m); t.dir = parts.join("/") + "/" + e.name;
+          for await (const f of e.values()) if (f.kind === "file" && f.name.endsWith(".md")) t.files.push(f.name);
+          t.files.sort();
+        }
+      } catch (e) { /* pasta ainda não existe */ }
+    };
+    if (app) await readDir(["apps", app.id, "trabalhos"], /^issue-(\d+)$/, () => app.id);   // pasta central
+    else await readDir(["trabalhos"], /^(.+)-issue-(\d+)$/, (m) => m[1]);                    // formato antigo
+    // eventos do hook: só os do app escolhido (sem app= no pedido, valem quando há um único app)
+    // relatórios de subagente que citavam "@agente ... issue N" geravam inícios falsos (hooks antigos): ignorados
+    const fromReport = (ev) => /^\s*<agent-message\b|\[Subagent hand-back\]/.test(ev.summary || "");
+    const mine = (ev) => !fromReport(ev) && (!app || ev.app === app.id || (!ev.app && apps.length <= 1));
+    for (const ev of events) if (ev.action === "factory.step_started" && ev.issue && mine(ev)) get(ev.issue);
     const now = Date.now();
     for (const t of tasks.values()) {
       for (const id of order) {
         const w = cfg.steps[id].writes;
-        const st = { id, state: "pending", verdict: "" };
+        const st = { id, state: "pending", verdict: "", since: 0 };
+        let outAt = 0; // quando a saída da etapa (ou as perguntas dela) foi gravada por último
         if (t.dir && w && !/[{}]/.test(w)) {
           const f = await readInfo(h, t.dir + "/" + w);
+          const qf = await readInfo(h, t.dir + "/" + w.replace(/\.md$/, "") + ".questions.md");
+          outAt = Math.max(f ? f.mtime : 0, qf ? qf.mtime : 0);
           if (f) { st.state = "done"; st.verdict = verdictOf(f.text); if (!t.title && id === "prd") t.title = first(f.text.split("\n").find((l) => /^#\s/.test(l)) || "").replace(/^#\s*(PRD:\s*)?/, "").replace(/\s*\(issue\s*#?\d+\)\s*$/i, ""); }
           else if (t.files.includes(w.replace(/\.md$/, "") + ".questions.md") && !t.files.includes(w.replace(/\.md$/, "") + ".answers.md")) st.state = "waiting";
         }
         const agent = agentOf(cfg.steps[id]);
-        const started = events.find((e) => e.action === "factory.step_started" && e.issue === t.issue && e.agent === agent);
+        const started = events.find((e) => e.action === "factory.step_started" && e.issue === t.issue && e.agent === agent && mine(e));
         if (started) {
+          // "rodando" até a etapa gravar a saída (ou as perguntas) depois do início. A resposta da sessão principal
+          // NÃO encerra: o agente costuma seguir em segundo plano. Se o agente parar sem gravar nada, encerra
+          // 2 min depois da parada (folga para quando ele é retomado, ex.: depois de perguntas).
           const ts = Date.parse(started.timestamp);
-          const ended = events.some((e) => Date.parse(e.timestamp) > ts && ((e.action === "factory.step_finished" && e.agent === agent) || e.action === "claude.responded"));
-          if (!ended && now - ts < RUN_MAX_MS) st.state = "running";
+          const wrote = outAt >= ts;
+          const stops = events.filter((e) => e.action === "factory.step_finished" && e.agent === agent && Date.parse(e.timestamp) > ts).map((e) => Date.parse(e.timestamp));
+          const stoppedLongAgo = stops.length && now - Math.max(...stops) > STOP_GRACE_MS;
+          if (!wrote && !stoppedLongAgo && now - ts < RUN_MAX_MS) { st.state = "running"; st.since = ts; }
         }
         t.steps[id] = st;
       }
@@ -298,7 +357,9 @@
     const ul = el("div", "pp__mini");
     ctx.order.forEach((id) => {
       const st = t.steps[id], row = el("div", "pp__mrow is-" + st.state);
-      row.append(el("i", null, MARK[st.state]), el("span", null, ctx.cfg.steps[id].label || id), el("small", null, st.state === "running" ? "rodando" : st.verdict || ""));
+      const mk = el("i", st.state === "running" ? "pp__spin" : null, st.state === "running" ? "" : MARK[st.state]);
+      if (st.state === "running") mk.setAttribute("aria-label", "em andamento");
+      row.append(mk, el("span", null, ctx.cfg.steps[id].label || id), el("small", null, st.state === "running" ? "rodando · " + ago(st.since) : st.verdict || ""));
       ul.append(row);
     });
     card.append(ul);
@@ -314,11 +375,32 @@
     if (!h) { ctx.note.textContent = "Conecte a pasta do projeto (Preferences) para acompanhar as tarefas."; ctx.taskCols.forEach((b) => b.replaceChildren()); lastKey = ""; return; }
     if (!ctx.fromProject) { ctx.note.textContent = ""; }
     let tasks; try { tasks = await scanTasks(h); } catch (e) { return; }
-    const key = JSON.stringify(tasks.map((t) => [t.issue, t.phase, t.flag, t.live, t.title, t.files.length, ctx.order.map((id) => t.steps[id].state + t.steps[id].verdict)]));
+    const key = JSON.stringify(tasks.map((t) => [t.issue, t.phase, t.flag, t.live, t.title, t.files.length, ctx.order.map((id) => t.steps[id].state + t.steps[id].verdict + (t.steps[id].since ? ago(t.steps[id].since) : ""))]));
     if (key === lastKey) return; lastKey = key;
-    ctx.note.textContent = tasks.length ? "" : "Nenhuma tarefa ainda. Rode no Claude Code, por exemplo: @intake triar a issue 3";
+    ctx.note.textContent = tasks.length ? "" : "Nenhuma tarefa ainda. Rode no Claude Code (na pasta central), por exemplo: @intake " + (curApp() ? "app=" + curApp().id + " " : "") + "issue 1";
     ctx.taskCols.forEach((b) => b.replaceChildren());
     tasks.forEach((t) => { const body = ctx.taskCols.get(t.phase) || [...ctx.taskCols.values()][0]; body.append(taskCard(t)); });
+    lastIssue = tasks.length ? tasks[0].issue : 0; // tasks vem da mais nova para a mais antiga
+  }
+
+  // { label da fase, items: [{ file, step }] } na ordem do ciclo. Um arquivo é da etapa cujo "writes" é ele
+  // ou começa com o nome base dele + "." ou "-" (techspec.questions.md, techspec.answers.md, pr-body.md).
+  function groupFiles(files) {
+    const { cfg, order } = ctx, left = new Set(files), groups = [];
+    const rank = (f, base) => (f === base + ".md" ? 0 : f.endsWith(".questions.md") ? 1 : f.endsWith(".answers.md") ? 2 : 3);
+    (cfg.phases || []).forEach((ph) => {
+      const items = [];
+      order.filter((id) => cfg.steps[id].phase === ph.id).forEach((id) => {
+        const w = cfg.steps[id].writes; if (!w || /[{}]/.test(w)) return;
+        const base = w.replace(/\.md$/, "");
+        [...left].filter((f) => f === w || f.startsWith(base + ".") || f.startsWith(base + "-"))
+          .sort((x, y) => rank(x, base) - rank(y, base) || x.localeCompare(y))
+          .forEach((f) => { left.delete(f); items.push({ file: f, step: cfg.steps[id].label || id }); });
+      });
+      if (items.length) groups.push({ label: ph.label || ph.id, items });
+    });
+    if (left.size) groups.push({ label: "Outros", items: [...left].sort().map((f) => ({ file: f, step: "" })) });
+    return groups;
   }
 
   // gaveta com os .md da tarefa
@@ -336,7 +418,18 @@
       const i = await readInfo(h, t.dir + "/" + f); const text = i ? i.text : "";
       doc.replaceChildren(window.renderMarkdown ? window.renderMarkdown(text) : Object.assign(el("pre"), { textContent: text }));
     };
-    t.files.forEach((f, n) => { const b = el("button", null, f); b.type = "button"; b.addEventListener("click", () => show(f, b)); nav.append(b); if (n === 0) show(f, b); });
+    // arquivos agrupados pelas fases do ciclo, na ordem do ciclo; cada arquivo vai para a etapa que o gerou
+    let firstShown = false;
+    groupFiles(t.files).forEach((g) => {
+      nav.append(el("div", "pp__tgroup", g.label));
+      g.items.forEach(({ file, step }) => {
+        const b = el("button", null); b.type = "button";
+        b.append(el("span", null, file));
+        if (step) b.title = "Etapa: " + step;
+        b.addEventListener("click", () => show(file, b)); nav.append(b);
+        if (!firstShown) { firstShown = true; show(file, b); }
+      });
+    });
     if (!t.files.length) doc.textContent = "Nenhum arquivo .md ainda.";
   }
 
@@ -358,6 +451,12 @@
       } catch (e) { resolve(null); }
     });
   }
+  // apps.json da pasta central: [{ id, cycle, ... }] (vazio fora do padrão pasta central)
+  async function projectApps() {
+    const h = await readableHandle(); if (!h) return [];
+    const i = await readInfo(h, "apps.json");
+    try { return (JSON.parse(i.text).apps || []).filter((a) => a && a.id); } catch (e) { return []; }
+  }
   // ciclos .json de .claude/cycles/ do projeto conectado: [{ name, cfg }]
   async function projectCycles() {
     const h = await getHandle(); if (!h) return [];
@@ -376,6 +475,9 @@
   async function load() {
     try {
       const list = await projectCycles();
+      apps = await projectApps();
+      if (apps.length && !curApp()) appId = apps[0].id;
+      if (curApp() && curApp().cycle && !selected) selected = curApp().cycle;
       let cfg, from = "";
       if (list.length) {
         const pick = list.find((c) => c.name === selected) || list[0];
@@ -389,5 +491,7 @@
   }
   document.querySelector('[data-pipe-tab="pipeline"]')?.addEventListener("click", load);
   window.addEventListener("aes:project-changed", () => { if (!root.closest("[hidden]")) load(); });
+  // ao entrar na página Pipeline, relê ciclo, apps e tarefas (a pasta pode ter mudado enquanto estava em outra página)
+  window.addEventListener("hashchange", () => { if (location.hash === "#/pipeline") load(); });
   load();
 })();
