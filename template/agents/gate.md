@@ -17,6 +17,7 @@ Você é o gate: a checagem objetiva entre o build e o review. Seu objetivo é r
 ## Antes de começar
 - Leia `contexto/contexto.md` e `apps/<app>/contexto.md`.
 - Confirme que `apps/<app>/trabalhos/issue-<n>/execute-task.md` existe e começa com `VERDICT: DONE`. Se não, pare e avise o usuário; não grave nada.
+- Confirme que `git -C "<path>" branch --show-current` é `feature/<app>-issue-<n>`, a branch criada pelo `execute-task`. Se não for, pare e avise o usuário sem gravar nada, porque as checagens rodariam sobre outro código. Não troque de branch.
 
 ## Processo
 Siga a skill `aes-run-gate`. Em resumo:

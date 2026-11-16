@@ -30,13 +30,13 @@ Todo pedido diz o app: `@intake app=<app> issue 1`. Com um único app cadastrado
 | `prd` | "crie o PRD da issue N". Ex.: `@prd app=<app> crie o PRD da issue 3`. Exige `intake.md` com `DECISION: ACCEPT` | `aes-create-prd` (modo fábrica) | `apps/<app>/trabalhos/issue-<n>/prd.md` | `DONE` → `@next`, `BLOCKED` → `@human` |
 | `doc-writer-techspec` | "crie o techspec da issue N". Ex.: `@doc-writer-techspec app=<app> crie o techspec da issue 3`. Exige `prd.md` com `VERDICT: DONE` | `aes-create-techspec` (modo fábrica) | `apps/<app>/trabalhos/issue-<n>/techspec.md` | `DONE` → `@next`, `BLOCKED` → `@human` |
 | `doc-writer-tasks` | "crie as tasks da issue N". Ex.: `@doc-writer-tasks app=<app> crie as tasks da issue 3`. Exige `techspec.md` com `VERDICT: DONE` | `aes-create-tasks` (modo fábrica) | `apps/<app>/trabalhos/issue-<n>/tasks.md` | `DONE` → `@next`, `BLOCKED` → `@human` |
-| `execute-task` | "implemente/execute a issue N". Ex.: `@execute-task app=<app> implemente a issue 3`. Exige `tasks.md` com `VERDICT: DONE` | `aes-execute-task` | código no repositório + `apps/<app>/trabalhos/issue-<n>/execute-task.md` | `DONE` → `@next`, `BLOCKED` → `@human` |
+| `execute-task` | "implemente/execute a issue N". Ex.: `@execute-task app=<app> implemente a issue 3`. Exige `tasks.md` com `VERDICT: DONE` | `aes-execute-task` | código na branch `feature/<app>-issue-<n>` (criada a partir da base atualizada, sem commit) + `apps/<app>/trabalhos/issue-<n>/execute-task.md` | `DONE` → `@next`, `BLOCKED` → `@human` |
 | `gate` | "rodar os testes/gate da issue N". Exige `execute-task.md` com `VERDICT: DONE` | `aes-run-gate` | `apps/<app>/trabalhos/issue-<n>/gate.md` | `PASS` → `@next`, `SKIPPED` → `@next`, `FAIL` → `execute-task` |
 | `reviewer-code` | "revise o código da issue N". Exige `gate.md` com `GATE: PASS` ou `SKIPPED` | (sem skill) | `apps/<app>/trabalhos/issue-<n>/review-code.md` | `PASS` → `@next`, `CHANGES` → `execute-task` |
 | `reviewer-security` | "revise a segurança da issue N". Mesma exigência | (sem skill) | `apps/<app>/trabalhos/issue-<n>/review-security.md` | `PASS` → `@next`, `CHANGES` → `execute-task` |
 | `reviewer-ui` | "revise a UI da issue N". Mesma exigência; sem mudança visual, `PASS` | (sem skill) | `apps/<app>/trabalhos/issue-<n>/review-ui.md` | `PASS` → `@next`, `CHANGES` → `execute-task` |
 | `reviewer-ux` | "revise a UX da issue N". Mesma exigência; sem mudança para o usuário, `PASS` | (sem skill) | `apps/<app>/trabalhos/issue-<n>/review-ux.md` | `PASS` → `@next`, `CHANGES` → `execute-task` |
-| `pr` | "abra o PR da issue N". Exige gate PASS/SKIPPED e os 4 `review-*` com `VERDICT: PASS` | (sem skill) | branch `feature/<app>-issue-<n>` + PR em rascunho + `apps/<app>/trabalhos/issue-<n>/pr.md` | `PASS` → `@next`, `FAIL` → `@human` |
+| `pr` | "abra o PR da issue N". Exige gate PASS/SKIPPED e os 4 `review-*` com `VERDICT: PASS` | (sem skill) | commit e push da branch `feature/<app>-issue-<n>` (criada pelo execute-task) + PR em rascunho + `apps/<app>/trabalhos/issue-<n>/pr.md` | `PASS` → `@next`, `FAIL` → `@human` |
 | `qa-manual` | "crie o roteiro de QA manual / teste manual da issue N". Ex.: `@qa-manual app=<app> crie o roteiro de QA manual da issue 3`. Exige `pr.md` com `VERDICT: PASS`. Opcional: o QA decide se executa o roteiro; não bloqueia approve nem merge | `aes-qa-test-manual-system` | `apps/<app>/trabalhos/issue-<n>/qa-manual.md` | `DONE` → `@next`, `BLOCKED` → `@human` |
 | `approver` | "aprove/decida a issue N". Exige `pr.md` com `VERDICT: PASS` | (sem skill) | `apps/<app>/trabalhos/issue-<n>/decision.md` | `APPROVE` → `@next`, `ESCALATE` → `@human` |
 | `merge` | "faça o merge da issue N". Exige `decision.md` com `VERDICT: APPROVE` | (sem skill) | `apps/<app>/trabalhos/issue-<n>/merge.md` | `MERGED` → `@next`, `FAIL` → `@human` |
@@ -44,6 +44,8 @@ Todo pedido diz o app: `@intake app=<app> issue 1`. Com um único app cadastrado
 A 1ª linha da entrega do intake é `DECISION: <veredito>` (prefixo próprio da triagem); a do prd, do techspec, do tasks, do execute-task, do qa-manual e dos revisores são `VERDICT: <veredito>`; a do gate é `GATE: <veredito>`.
 
 Perguntas do prd e do techspec: o agente grava `apps/<app>/trabalhos/issue-<n>/<etapa>.questions.md` e responde `QUESTIONS: ...`; a sessão principal pergunta ao usuário, grava `<etapa>.answers.md` e retoma o agente.
+
+Branch da issue: o `execute-task` cria `feature/<app>-issue-<n>` antes de editar, a partir de `origin/<base>` atualizada. Gate, revisores e `pr` só trabalham nela e param se a branch atual for outra. Uma issue por vez em cada app: com mudanças de outra issue ainda não publicadas, o `execute-task` devolve `BLOCKED`.
 
 ## Caixa de entrada
 - Repositório: o do app (`apps.json` → `github`), nunca o desta pasta.

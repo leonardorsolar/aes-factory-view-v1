@@ -2,6 +2,24 @@
   "version": 1,
   "events": [
     {
+      "id": "221efe30-0554-427f-9b83-b938f1bb3ae9",
+      "kind": "deed",
+      "action": "claude.responded",
+      "title": "",
+      "actor": "Claude",
+      "timestamp": "2026-11-16T17:09:22.445Z",
+      "summary": "The `pr` agent's description still says it creates the branch; fixing that."
+    },
+    {
+      "id": "5486bba1-521e-406e-83dc-1d565ed06a65",
+      "kind": "deed",
+      "action": "claude.responded",
+      "title": "",
+      "actor": "Claude",
+      "timestamp": "2026-11-16T17:07:04.931Z",
+      "summary": "Mudei o QA manual para depois do PR e deixei a etapa opcional. O JSON do ciclo continua válido e o bundle foi regerado. Não abri o Pipeline…"
+    },
+    {
       "id": "495ee70a-4d07-4a3e-9d3e-ed36768b89fb",
       "kind": "deed",
       "action": "claude.responded",
