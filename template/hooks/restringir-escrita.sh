@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # PreToolUse (Write|Edit), registrado no frontmatter dos agentes de documento e revisão:
-# só permite gravar dentro de apps/<app>/trabalhos/ da pasta central.
+# só permite gravar dentro de apps/<app>/trabalhos/ e em .claude/memory/<agente>-memoria.md da pasta central.
 f=$(jq -r '.tool_input.file_path // empty' 2>/dev/null)
 [ -z "$f" ] && exit 0
 raiz="${CLAUDE_PROJECT_DIR:-$(pwd)}"
@@ -11,6 +11,8 @@ esac
 case "$abs" in
   *..*) echo "Bloqueado: caminho com .." >&2; exit 2 ;;
   "$raiz"/apps/*/trabalhos/*) exit 0 ;;
+  "$raiz"/.claude/memory/*/*) ;;
+  "$raiz"/.claude/memory/*-memoria.md) exit 0 ;;
 esac
-echo "Bloqueado: o agente só grava em apps/<app>/trabalhos/ da pasta central (tentou: $f)" >&2
+echo "Bloqueado: o agente só grava em apps/<app>/trabalhos/ e em .claude/memory/<agente>-memoria.md da pasta central (tentou: $f)" >&2
 exit 2

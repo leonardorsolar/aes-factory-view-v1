@@ -281,6 +281,29 @@
         "review-ux"
       ]
     },
+    "qa-manual": {
+      "phase": "deliver",
+      "label": "QA Manual",
+      "run": {
+        "agent": "qa-manual (skill aes-qa-test-manual-system)"
+      },
+      "reads": [
+        "prd.md",
+        "techspec.md",
+        "tasks.md",
+        "execute-task.md",
+        "pr.md"
+      ],
+      "writes": "qa-manual.md",
+      "next": {
+        "DONE": "@next",
+        "BLOCKED": "@human"
+      },
+      "needs": [
+        "pr"
+      ],
+      "description": "Gera o roteiro de teste manual para o QA. Opcional: o QA decide se executa; não bloqueia approve nem merge."
+    },
     "approve": {
       "phase": "deliver",
       "label": "Approve",
@@ -346,6 +369,7 @@
         "review-ui",
         "review-ux",
         "pr",
+        "qa-manual",
         "approve",
         "merge"
       ]

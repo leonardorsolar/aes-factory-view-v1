@@ -111,6 +111,16 @@ Fases: Fase: Discovery, Design, Build, Verify, Deliver
 - aprovação: não
 - vereditos: PASS → @next; FAIL → @human
 
+### QA Manual
+- id: qa-manual
+- executa: agente qa-manual (skill aes-qa-test-manual-system)
+- lê: prd.md, techspec.md, tasks.md, execute-task.md, pr.md
+- grava: qa-manual.md
+- comandos: @qa-manual crie o roteiro de QA manual da <issue#N>
+- aprovação: não
+- opcional: o QA decide se executa o roteiro; não bloqueia approve nem merge (depende só do pr)
+- vereditos: DONE → @next; BLOCKED → @human
+
 ### Approve
 - id: approve
 - executa: agente approver

@@ -2,6 +2,134 @@
   "version": 1,
   "events": [
     {
+      "id": "495ee70a-4d07-4a3e-9d3e-ed36768b89fb",
+      "kind": "deed",
+      "action": "claude.responded",
+      "title": "",
+      "actor": "Claude",
+      "timestamp": "2026-11-16T17:02:05.937Z",
+      "summary": "Agora o agente e a skill: pré-requisito passa a ser o `pr.md`, e o Setup do roteiro usa a branch do PR."
+    },
+    {
+      "id": "011b202a-0f3d-49b4-ba23-2d46a1b0ad71",
+      "kind": "deed",
+      "action": "claude.responded",
+      "title": "",
+      "actor": "Claude",
+      "timestamp": "2026-11-16T16:57:14.435Z",
+      "summary": "Esse documento foi escrito antes do `qa-manual` e não o menciona. O QA aparece em três lugares, sempre como algo que ainda não existe: 1. *…"
+    },
+    {
+      "id": "5c1d065f-96a5-40d4-8208-3519423d6f88",
+      "kind": "deed",
+      "action": "claude.responded",
+      "title": "",
+      "actor": "Claude",
+      "timestamp": "2026-11-16T16:54:41.413Z",
+      "summary": "A instalação roda no app web (o `index.html` deste projeto), por qualquer um destes dois caminhos: 1. **Menu lateral:** clique em **\"Baixar…"
+    },
+    {
+      "id": "0b82ed91-9cb3-4482-b8f7-82dbae020e42",
+      "kind": "deed",
+      "action": "claude.session_started",
+      "title": "startup",
+      "actor": "Claude",
+      "timestamp": "2026-11-16T15:58:55.853Z"
+    },
+    {
+      "id": "8212d53c-b650-4050-bd55-30b1773de348",
+      "kind": "deed",
+      "action": "claude.responded",
+      "title": "",
+      "actor": "Claude",
+      "timestamp": "2026-11-16T15:29:53.460Z",
+      "summary": "Sim, o template está atualizado: `template/cycles/novo-ciclo.json` já tem a etapa `qa-manual` (salvo às 12:22), e o bundle `js/skills-bundl…"
+    },
+    {
+      "id": "ea69697b-1412-4a0c-90db-454f2b05a814",
+      "kind": "deed",
+      "action": "claude.responded",
+      "title": "",
+      "actor": "Claude",
+      "timestamp": "2026-11-16T15:28:22.037Z",
+      "summary": "O QA ainda não aparece em `/home/solar/Documentos/factory-home/.claude/cycles/novo-ciclo.json`. O ciclo de lá continua com 13 etapas, sem `…"
+    },
+    {
+      "id": "0d76a885-36a5-41df-91d3-753903e39c4e",
+      "kind": "deed",
+      "action": "claude.responded",
+      "title": "",
+      "actor": "Claude",
+      "timestamp": "2026-11-16T15:26:57.887Z",
+      "summary": "Corrigi o hook [restringir-escrita.sh](template/hooks/restringir-escrita.sh): agora os agentes de documento e revisão conseguem gravar as p…"
+    },
+    {
+      "id": "8e7b4234-0d81-4c89-ac94-74cca72a7d7c",
+      "kind": "deed",
+      "action": "claude.responded",
+      "title": "",
+      "actor": "Claude",
+      "timestamp": "2026-11-16T15:24:48.509Z",
+      "summary": "Criei o bloco completo `aes-qa-test-manual-system` em `template/`, ajustado ao modo fábrica. A skill original `aes-teste-sistema-manual` nã…"
+    },
+    {
+      "id": "f95f8aa4-5ae9-4d4d-ae9c-26613b48640e",
+      "kind": "deed",
+      "action": "claude.file_edited",
+      "title": "template/hooks/restringir-escrita.sh",
+      "actor": "Claude",
+      "timestamp": "2026-11-16T15:24:42.482Z"
+    },
+    {
+      "id": "f581eab5-a1cb-4977-ba8c-fa684ee6614a",
+      "kind": "deed",
+      "action": "claude.responded",
+      "title": "",
+      "actor": "Claude",
+      "timestamp": "2026-11-16T15:22:26.331Z",
+      "summary": "Agora alinhando `CLAUDE.md`, o ciclo e o mapa de comandos do Pipeline."
+    },
+    {
+      "id": "5b04360f-c21b-4706-b09f-89884f2f80d9",
+      "kind": "deed",
+      "action": "claude.file_written",
+      "title": "template/memory/qa-manual-memoria.md",
+      "actor": "Claude",
+      "timestamp": "2026-11-16T15:22:01.687Z"
+    },
+    {
+      "id": "065c94fe-50e6-4e69-aa19-0ad37440dac0",
+      "kind": "deed",
+      "action": "claude.file_written",
+      "title": "template/agents/qa-manual.md",
+      "actor": "Claude",
+      "timestamp": "2026-11-16T15:22:00.893Z"
+    },
+    {
+      "id": "66015ef9-23ad-43c5-a572-26fdd57b2021",
+      "kind": "deed",
+      "action": "claude.file_written",
+      "title": "template/skills/aes-qa-test-manual-system/references/scenario-derivation-rules.md",
+      "actor": "Claude",
+      "timestamp": "2026-11-16T15:22:00.055Z"
+    },
+    {
+      "id": "e4beccfa-4e18-4481-a473-0715af3c5106",
+      "kind": "deed",
+      "action": "claude.file_written",
+      "title": "template/skills/aes-qa-test-manual-system/references/qa-manual-template.md",
+      "actor": "Claude",
+      "timestamp": "2026-11-16T15:21:59.275Z"
+    },
+    {
+      "id": "5ff9f130-9b11-49ce-92e6-aa691a7d0814",
+      "kind": "deed",
+      "action": "claude.file_written",
+      "title": "template/skills/aes-qa-test-manual-system/SKILL.md",
+      "actor": "Claude",
+      "timestamp": "2026-11-16T15:21:58.468Z"
+    },
+    {
       "id": "9850ba90-3367-43e6-966a-6e18e8bf876a",
       "kind": "deed",
       "action": "claude.session_started",

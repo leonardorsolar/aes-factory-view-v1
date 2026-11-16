@@ -119,7 +119,7 @@
   // pedido com o app (pasta central): "@reviewer-code app=<app> revise o código da issue 1"
   const ASK_APP = {
     intake: "avalie a issue", prd: "crie o PRD da issue", "doc-writer-techspec": "crie o techspec da issue",
-    "doc-writer-tasks": "crie as tasks da issue", "execute-task": "implemente a issue", gate: "rode o gate da issue",
+    "doc-writer-tasks": "crie as tasks da issue", "execute-task": "implemente a issue", gate: "rode o gate da issue", "qa-manual": "crie o roteiro de QA manual da issue",
     "reviewer-code": "revise o código da issue", "reviewer-security": "revise a segurança da issue",
     "reviewer-ui": "revise a UI da issue", "reviewer-ux": "revise a UX da issue", pr: "abra o PR da issue",
     approver: "aprove a issue", merge: "faça o merge da issue",
